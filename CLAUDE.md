@@ -19,7 +19,9 @@
 | `/story-setup`、`/准备写书` | story-setup | 环境部署 · hooks/rules/agents 一键部署 |
 | `/story-publish`、`/发布`、`/番茄标签` | story-publish | 番茄小说发布 · 标签推荐 |
 | `/story-export-docx`、`/导出` | story-export-docx | 正文导出 Word 文档 |
+| `/story-rewrite`、`/仿写`、`/结构仿写` | story-rewrite | 结构仿写 · 套用爆款骨架写新书 |
 | `/browser-cdp` | browser-cdp | 浏览器 CDP 工具 |
+| `/meta-iterate`、`/迭代`、`/自我迭代` | meta-iterative-improvement | 元迭代改进 - 让技能自我进化 |
 
 ---
 
