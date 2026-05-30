@@ -263,6 +263,19 @@ Phase 2 的 agent 返回内容后，主线程**一口气完成以下操作**：
 📁 文件：仿写试水库/试水_{新书名}.txt
 📊 字数：Ch1=XXX | Ch2=XXX | Ch3=XXX（写入后一行bash统计）
 📖 简介：[生成的简介]
+
+⏳ 后台正在运行抄袭检测+质量评估，结果稍后显示...
+```
+
+**review 结果出来后显示**：
+```
+📋 试水审查报告
+抄袭检测：CLEAN/SUSPICIOUS/PLAGIARIZED
+结构：APPROVE/CONCERNS/REJECT
+角色：APPROVE/CONCERNS/REJECT
+写作：APPROVE/CONCERNS/REJECT
+一致性：APPROVE/CONCERNS/REJECT
+总评：[1句话总结]
 ```
 
 ---
