@@ -80,15 +80,17 @@ skills/story-rewrite/styles/{人物}/
 | `injections` key | 女娲Skill中提取的section | 注入到prompt位置 | 提取规则 |
 |-----------------|------------------------|----------------|---------|
 | `voice` | `## 表达DNA`（支持 `source_sub_headings` 子节过滤） | `## 你的声音` | 有子节列表时只提取匹配子节内容，跳过禁用词/对照表 |
-| `rules` | `## 核心写作心智模型` + `## 决策启发式` + `## 价值观与反模式` | `写作原则（追加）` | 模型取标题+一句话摘要+证据；启发式全取；反模式取标题行 |
-| `quality` | `## 质量检查清单` | 审查阶段 | 可选，没有跳过 |
+| `rules` | `## 写作回答工作流` + `## 核心写作心智模型` + `## 决策启发式` + `## 价值观与反模式` | `写作原则（追加）` | 工作流取全文；模型取标题+一句话摘要+证据；启发式全取；反模式取标题行 |
+| `quality` | `## 质量检查清单`（支持 `source_sub_headings`） | 审查阶段 | 可选，没有跳过 |
 | `templates` | `## 可运行的写作模板` | 章纲生成参考 | 可选，没有跳过 |
+| `recovery` | `## 写作恢复手册` | 写作恢复指引 | 可选，没有跳过 |
 
 **创建步骤**：
-1. 确认女娲SKILL.md包含以上4个section
+1. 确认女娲SKILL.md包含 `voice`/`rules`/`quality`/`templates`/`recovery` 等需要的section
 2. 创建 `meta.json`，`source_skill` → `skills/story-style/{人物}/SKILL.md`
 3. 根据 `trigger` 字段提取兼容/不兼容体裁
 4. 从节奏描述中提取 `chapter_word_count`（默认2000-2500）
+5. 缺失的injection（如某个section不存在）直接从 `injections` 中移除，不要保留空引用
 
 ### 当前可用风格
 
