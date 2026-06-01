@@ -64,9 +64,65 @@ Phase 3（收尾）      去AI + 一致性检查 + 字数校验
 | 检查点 | 检查内容 | 不通过时 |
 |--------|---------|---------|
 | 章纲生成后 | 章数完整、格式正确 | spawn 补写 agent |
+| **每批完成后** | **反模式扫描 + 时间线检查 + 重复文本检测** | **立即spawn修复agent** |
 | 正文写完后 | 字数达标、文件存在 | 标记补写队列 |
-| 每3批后 | 一致性审查 | 自动修正 |
-| 全书完成后 | 去AI + 禁用词扫描 | 自动执行 |
+| 每3批后 | 一致性审查 + 伏笔追踪更新 | 自动修正 |
+| 全书完成后 | 去AI + 禁用词扫描 + 终检 | 自动执行 |
+
+#### ⚠️ 每批完成后的反模式扫描（必须执行）
+
+**核心思路**：scanner不包含任何风格特定规则，只负责"读取当前风格的禁止词→扫描→报告"。
+
+```powershell
+# 反模式扫描脚本（每批完成后执行）
+# 风格无关：从 SKILL.md 动态读取禁止词，不硬编码
+$OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+# 1. 从风格 SKILL.md 读取禁止词（动态，不硬编码）
+$stylePath = ".claude/skills/story-style/{style}/SKILL.md"  # 由主线程替换实际路径
+$styleContent = Get-Content $stylePath -Raw -Encoding UTF8
+
+# 提取"反模式"部分的禁止词
+$forbiddenWords = @()
+if ($styleContent -match '## 反模式[\s\S]*?(?=\n## |\z)') {
+    $antiPatternSection = $Matches[0]
+    # 提取「」中的词汇
+    $matches = [regex]::Matches($antiPatternSection, '「([^」]+)」')
+    foreach ($m in $matches) {
+        $forbiddenWords += $m.Groups[1].Value
+    }
+}
+
+Write-Output "从风格SKILL.md读取到 $($forbiddenWords.Count) 个禁止词"
+
+# 2. 扫描正文文件
+$files = Get-ChildItem "{书名}/正文/第*.md" | Sort-Object Name  # 由主线程替换实际路径
+
+foreach ($file in $files) {
+    $content = Get-Content $file.FullName -Raw -Encoding UTF8
+    $issues = @()
+    
+    # 检查禁止词汇
+    foreach ($word in $forbiddenWords) {
+        if ($content -match [regex]::Escape($word)) {
+            $issues += "禁止词汇: $word"
+        }
+    }
+    
+    if ($issues.Count -gt 0) {
+        Write-Output "ISSUE: $($file.Name)"
+        foreach ($issue in $issues) {
+            Write-Output "  - $issue"
+        }
+    }
+}
+```
+
+**主线程职责**：
+1. 替换脚本中的 `{style}` 和 `{书名}` 为实际值
+2. 执行脚本，收集输出
+3. 发现 ISSUE → spawn 修复 agent 重写问题段落
 
 ### 摘要机制
 
@@ -233,8 +289,10 @@ Phase 1 完成后直接开始，不试水，不等用户确认。
 ```
 Step 1：M 个 narrative-writer 并行 spawn
         - 每 agent 负责 K 章（K=2 或 3）
-        - prompt 注入：设定锁 + K 章章纲 + style 路径
+        - prompt 注入：设定锁 + K 章章纲 + style 路径 + 上章结尾内容
         - agent 直接写文件，不返回正文
+        - ⚠️ prompt必须包含上章结尾的具体内容（时间/地点/人物状态/最后一句）
+        - ⚠️ prompt必须包含强制自检指令（写完后读取SKILL.md反模式部分逐条检查）
 
         并行度自适应：
         - 推荐：M=5, K=3 → 每批 15 章
@@ -249,17 +307,23 @@ Step 2：主线程字数校验（每批完成）
         - 硬上限：3000字（超过截断）
         - 硬下限：1600字（低于补写）
 
-Step 3：生成正文摘要（每批完成）
+Step 3：⚠️ 主线程反模式扫描（每批完成，必须执行）
+        - 从 style SKILL.md 动态读取禁止词（不硬编码）
+        - 扫描本批所有章节的禁止词
+        - 扫描重复文本（连续3句以上与上章重复）
+        - 发现问题 → 立即spawn修复agent重写问题段落
+
+Step 4：生成正文摘要（每批完成）
         - 写入 {书名}/追踪/上下文.md
 
-Step 4（每 2 批执行一次）：
+Step 5（每 2 批执行一次）：
         - story-review 一致性审查
         - 更新追踪文件（伏笔.md / 时间线.md / 角色状态.md）
         - 字数异常章节批量处理
 
-Step 5：检查剩余章纲，不足 2 批时 → story-architect 补充
+Step 6：检查剩余章纲，不足 2 批时 → story-architect 补充
 
-Step 6：字数不足章节处理
+Step 7：字数不足章节处理
         - <1600字：立即 spawn 补写
         - 1600-1800字：加入下一批补写队列
 ```
@@ -335,6 +399,8 @@ Step 6：字数不足章节处理
 - 只放任务信息 + 文件路径
 - 风格特征、写作原则、反模式全部从 style SKILL.md 读取
 - 不在 prompt 里写死任何写作规则
+- **强制自检**：写完后必须读取 style SKILL.md 的反模式部分逐条自检
+- **上章结尾**：从上章正文提取具体内容，注入prompt
 
 **prompt 模板**：
 ```
@@ -343,11 +409,33 @@ Step 6：字数不足章节处理
 ## ⚠️ 角色锚点（写错角色名=致命错误）
 {从设定锁提取的角色名表}
 
+## ⚠️ 上章结尾（必须严格承接）
+{从上章正文提取的具体内容，包括：}
+- 时间：{具体时间，如"傍晚""深夜""次日清晨"}
+- 地点：{具体地点，如"破庙内""青州城门""书房"}
+- 人物状态：{具体状态，如"裴行舟刚醒来""沈清棠正在整理药箱"}
+- 最后一句话：{上章最后一句原文}
+
+**本章开头必须与上章结尾在时间、地点、人物状态上完全一致，不能出现时间倒流、地点跳跃、状态矛盾。**
+
 ## ⚠️ 写作前检查清单（每章写之前必须核对）
 1. 读取风格 SKILL.md：{style_skill_path} → 了解风格特征、写作原则、反模式、章纲模板
 2. 读取设定锁：{书名}/设定/设定锁.md → 核对角色名、地名、人物关系
 3. 读取章纲：{书名}/大纲/章纲_全书.md → 找第{start}-{end}章
-4. 读取上章正文：{书名}/正文/第{start-1}章_{章名}.md
+4. 读取上章正文：{书名}/正文/第{start-1}章_{章名}.md → 提取结尾内容
+
+## ⚠️ 写完后强制自检（必须执行，不通过则重写）
+
+**写完每章后，必须执行以下自检流程：**
+
+1. **读取反模式清单**：读取 {style_skill_path} 中的「反模式」部分
+2. **逐条扫描**：对照反模式清单，逐条检查本章是否违反
+3. **修复违反项**：发现违反的段落，必须重写后再写入文件
+4. **时间线检查**：本章开头是否与上章结尾一致？
+5. **重复文本检查**：是否有连续3句以上与上章重复？
+6. **字数检查**：每章1800-2600字，不足则扩充
+
+**自检不通过的，必须修改后再写入文件。不要跳过任何检查项。**
 
 ## 本次任务
 写 {K} 章（第{start}章 ~ 第{end}章）
