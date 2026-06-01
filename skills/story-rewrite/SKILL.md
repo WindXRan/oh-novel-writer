@@ -243,39 +243,47 @@ python skills/story-style/extract-injection.py --style={name}
 
 **示例**：闻栖风格的 prompt 构造
 ```python
-# 1. 调用 extract-injection.py 获取精简风格注入
-import subprocess, json
-result = subprocess.run([
-    "python", "skills/story-style/extract-injection.py",
-    "--style=wenqi", "--compact"
-], capture_output=True, text=True)
-style = json.loads(result.stdout)
+# 1. 从 meta.json 获取 style SKILL.md 路径
+import json
+with open("skills/story-style/wenqi/meta.json", "r", encoding="utf-8") as f:
+    meta = json.load(f)
+style_skill_path = meta["source_skill"]  # 输出：skills/story-style/wenqi/SKILL.md
 
-# 2. 构造 prompt
+# 2. 从设定锁提取角色名表
+with open("女配一睁眼，失忆霸总非要跟我领证/设定/设定锁.md", "r", encoding="utf-8") as f:
+    setting_content = f.read()
+# 提取角色名表（简化示例）
+character_names = """
+- 温岁禾：女，25岁，穿越者，原商业间谍，现假扮傅司寒妻子
+- 傅司寒：男，28岁，失忆霸总，傅氏集团CEO
+- 傅司砚：男，26岁，傅司寒同父异母弟弟，反派
+- 苏婉凝：女，27岁，傅司寒未婚妻，苏家千金
+"""
+
+# 3. 构造 prompt
 prompt = f"""
 # ⚠️ 叙事视角：必须第三人称。
 
-## 你的声音
-{style['injections']['voice']['content']}
+## ⚠️ 角色锚点（写错角色名=致命错误）
+{character_names}
 
-## ⚠️ 设定锁（不可违反）
-请读取：{书名}/设定/设定锁.md
+## ⚠️ 写作前检查清单
+1. **读取风格 SKILL.md**：{style_skill_path} → 了解风格特征、写作原则、反模式
+2. 读取章纲：女配一睁眼，失忆霸总非要跟我领证/大纲/章纲_全书.md → 找第{start}-{end}章
+3. 读取上章正文：女配一睁眼，失忆霸总非要跟我领证/正文/第{start-1}章_{章名}.md
 
 ## 本次任务
-你负责写 {K} 章（第{start}章 ~ 第{end}章）
+写 {K} 章（第{start}章 ~ 第{end}章）
 
-## 写作原则
-{style['injections']['rules']['content']}
-
-## 写作模板
-{style['injections']['templates']['content']}
+## 格式
+第一行：`第{{N}}章 {{章名}}`
 """
 ```
 
 **错误处理**：
-- 脚本返回 `error` 字段 → 报错并终止
-- `injections.voice.found` 为 false → 报错：`风格 '{name}' 的表达DNA缺失`
-- `injections` 全部为 false → 报错并终止
+- meta.json 缺失或格式错误 → 报错并终止
+- source_skill 文件不存在 → 报错并终止
+- 设定锁文件不存在 → 报错并终止
 
 **⚠️ 必须指定风格**：不加 `--style` 时，询问用户选择风格：
 ```
