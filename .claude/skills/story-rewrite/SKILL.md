@@ -58,7 +58,7 @@ Phase 3：收尾
 
 2. **源文分析**：
    - prompt：`prompts/source-analyzer.md`
-   - 输入：源文全文（限前 20000 字符，对齐 inkos slice 窗口）
+   - 输入：源文全文（提取世界规则、角色、事件、结构）
    - temperature：0.3
    - 输出：`追踪/源文特征.md`
 
@@ -87,7 +87,7 @@ Phase 3：收尾
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--chunk-size` | 10 | 每区间写几章（对齐 inkos 20000 字符分析窗口） |
+| `--chunk-size` | 10 | 每区间写几章 |
 | `--parallel` | 10 | 每区间并行 agent 数 |
 | `--skip-test` | false | 跳过前3章测试 |
 
