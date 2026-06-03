@@ -158,24 +158,46 @@ Layer C：读取 `追踪/写作方法论.md`（首次生成，后续复用）
 
 spawn M 个 writer agent（M = `--parallel`）。
 
-system prompt：`prompts/writer-system.md`
+**system prompt**：`prompts/writer-system.md`
 
-user message 包含：
-- 世界设定 → `设定/story_bible.md`
-- 写作规则 → `设定/book_rules.md`
-- 卷纲 → `大纲/卷纲.md`
-- 本章章纲
-- 文风指纹（统计约束）
-- 文风指南 → `追踪/蒸馏_{x-y}.md`
-- 写作方法论 → `追踪/写作方法论.md`
-- 角色语音 → `追踪/角色语音.md`
-- 结构映射
-- 当前状态卡 → `追踪/current_state.md`
-- 伏笔池 → `追踪/pending_hooks.md`
-- 章节摘要 → `追踪/chapter_summaries.md`
-- 上章结尾（第2章起）
+**user message**（必须读取的文件标 ⚠️）：
 
-输出：`正文/第N章.txt`（2000-2500 字）
+```
+【世界设定】⚠️ 请先读取：{设定/story_bible.md}
+
+【写作规则】⚠️ 请先读取：{设定/book_rules.md}
+
+【卷纲】⚠️ 请先读取：{大纲/卷纲.md}
+
+【本章章纲】{章纲内容}
+
+【文风指纹】（style/both）
+{统计约束：平均句长/短句占比/段落长度等}
+
+【文风指南】⚠️ 请先读取：{追踪/蒸馏_{x-y}.md}
+
+【写作方法论】⚠️ 请先读取：{追踪/写作方法论.md}
+
+【角色语音】（style/both）⚠️ 请先读取：{追踪/角色语音.md}
+
+【结构映射】（structure/both）
+{本章映射}
+
+【当前状态卡】⚠️ 请先读取：{追踪/current_state.md}
+
+【伏笔池】⚠️ 请先读取：{追踪/pending_hooks.md}
+
+【章节摘要】⚠️ 请先读取：{追踪/chapter_summaries.md}
+
+【上章结尾】（第2章起）
+{上章最后500字}
+
+【输出要求】
+- 输出到：{书名}/正文/第{N}章.txt
+- 字数：2000-2500 字
+```
+
+**⚠️ 关键：writer 必须读取蒸馏文件（蒸馏_{x-y}.md），否则文风无法保证。**
 
 ### 2.8 校验
 
