@@ -314,8 +314,14 @@ else:
 
 读取：第N章初稿
 
+**⚠️ 必须使用 word_counter.py 统计字数，不要自己数！**
+
+```bash
+python word_counter.py {书名}/正文/第{chapter}.txt
+```
+
 使用 `prompts/auditor-system.md` 进行审计：
-1. 字数合规（目标2000-2500字，硬上限3000字，硬下限1800字）
+1. 字数合规（目标2000-2500字，硬上限3000字，硬下限1800字）← 用word_counter.py统计
 2. 情绪弧线
 3. 钩子设计
 4. 人设一致性
@@ -349,6 +355,7 @@ for chapter in range(start, end+1):
 【输出要求】
 - 输出到：{书名}/正文/第{chapter}章.txt
 - 字数：目标2000-2500字，硬上限3000字，硬下限1800字
+- ⚠️ 写完后必须用 word_counter.py 统计字数：python word_counter.py {书名}/正文/第{chapter}.txt
 - 必须先读取蒸馏文件再开始写作
 - 文风规则以蒸馏文件为准（只学句子节奏/对话密度/段长，不抄内容）
 - ⚠️ 【仿写规则】只保留源章的行文结构（动作链/冲突推进/钩子位置）。利益冲突必须更换，动作与反应全部换，具体事件/场景/对话全部原创。和源文"换名字不改骨架"=洗稿，会被平台判定。
@@ -374,6 +381,8 @@ for chapter in range(start, end+1):
   Step 1: 检测 → detection_report.json
   Step 2: 如果有critical问题 → 改写
   Step 3: 重检测 → 循环直到通过
+
+⚠️ 改写后必须用 word_counter.py 重新统计字数
 ```
 
 ---
