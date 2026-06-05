@@ -1,26 +1,29 @@
 # -*- coding: utf-8 -*-
 """
-批量创建模板文件，让 agent 只填内容不写格式。
-用法：python create_templates.py <类型> <章节数> <输出目录>
+批量创建模板文件，从 analysis-modes.json 驱动。
+用法：
+  python create_templates.py <模式> <章节数> <输出目录>
+  python create_templates.py all <章节数> <输出目录>
+  python create_templates.py setup <章节数> <设定目录> <大纲目录>
 
-类型：
-  style       - 风格指南模板（inkos 8维度）
-  plot        - 情节指南模板（核心桥段+排除项+叙事技巧）
-  outline     - 章纲模板
-  concept     - 新书概念模板
-  bible       - 世界观模板
-  arc         - 全书弧线骨架模板
-  mapping     - 章节顺序映射模板
-  hook        - 钩子工程模板
-  character   - 角色塑造模板
-  setup       - 创建设定+大纲模板（不依赖蒸馏）
-  all         - 创建全部模板（需要蒸馏目录）
+模式自动从 analysis-modes.json 发现，新增模式只需：
+1. 在 analysis-modes.json 加配置
+2. 在 templates/ 目录加模板文件（可选，有默认模板）
 """
 
 import sys
 import os
+import json
 
-STYLE_TEMPLATE = """# 风格指南：第{N}章
+# 获取脚本所在目录
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SKILL_DIR = os.path.dirname(SCRIPT_DIR)
+CONFIG_PATH = os.path.join(SKILL_DIR, "analysis-modes.json")
+TEMPLATES_DIR = os.path.join(SKILL_DIR, "templates")
+
+# 默认模板（当 templates/ 目录下没有对应文件时使用）
+DEFAULT_TEMPLATES = {
+    "style": """# 风格指南：第{N}章
 
 > 来源：{源书名} 第{N}章
 > 基于 style_profile_{N}.json 定量数据
@@ -56,9 +59,8 @@ STYLE_TEMPLATE = """# 风格指南：第{N}章
 ## 8. 独特习惯
 
 （填入：值得模仿的个人写作习惯）
-"""
-
-PLOT_TEMPLATE = """# 情节指南：第{N}章
+""",
+    "plot": """# 情节指南：第{N}章
 
 > 来源：{源书名} 第{N}章
 
@@ -152,9 +154,68 @@ PLOT_TEMPLATE = """# 情节指南：第{N}章
 ### 情绪操控
 
 （填入：用什么手法让读者笑/紧张/心动？）
-"""
+""",
+    "hook": """# 钩子工程分析：第{N}章
 
-OUTLINE_TEMPLATE = """# 章纲：第{N}章
+> 来源：{源书名} 第{N}章
+
+## 1. 段落钩子
+
+（填入：作者怎么在段落结尾勾住读者往下读？用了什么技法？引用原文例句）
+
+## 2. 章首钩子
+
+（填入：开头几段怎么抓住注意力？第一句话是什么类型的钩子？）
+
+## 3. 章末钩子
+
+（填入：结尾怎么让读者必须翻页？是悬念、反转、情感、还是信息缺口？）
+
+## 4. 情绪钩子
+
+（填入：作者怎么让读者在意角色？用了什么情感绑定技法？）
+
+## 5. 信息钩子
+
+（填入：作者怎么制造「想知道答案」的欲望？藏了什么信息？）
+
+## 6. 反预期钩子
+
+（填入：作者怎么打破读者预期？在哪里做了反转？效果是什么？）
+""",
+    "character": """# 角色塑造分析：第{N}章
+
+> 来源：{源书名} 第{N}章
+
+## 1. 角色立体感
+
+（填入：作者怎么让角色感觉像真人？用了什么细节？引用原文例句）
+
+## 2. 性格外化技法
+
+（填入：作者怎么通过动作/对话/反应展示性格，而不是直说「她很XX」？）
+
+## 3. 角色差异化
+
+（填入：不同角色的说话方式、行为模式有什么区别？怎么一眼分出谁是谁？）
+
+## 4. 配角塑造
+
+（填入：配角怎么做到有存在感但不抢戏？用了什么技法？）
+
+## 5. 角色关系张力
+
+（填入：角色之间的关系怎么制造有趣/紧张/甜蜜的动态？）
+
+## 6. 角色成长暗示
+
+（填入：作者怎么暗示角色在变化？用了什么伏笔或细节？）
+"""
+}
+
+# 设定/大纲模板
+SETUP_TEMPLATES = {
+    "outline": """# 章纲：第{N}章
 
 ## 第{N}章 [章名]
 
@@ -165,9 +226,8 @@ OUTLINE_TEMPLATE = """# 章纲：第{N}章
 - 钩子：（填入：章末钩子，1句话）
 - 爽点来源：（填入：爽感公式，如"身份反转""装逼打脸"）
 - 原创元素：（填入：至少1个源文完全没有的元素）
-"""
-
-CONCEPT_TEMPLATE = """# 新书概念
+""",
+    "concept": """# 新书概念
 
 ## 基本信息
 - **书名**：
@@ -203,9 +263,8 @@ CONCEPT_TEMPLATE = """# 新书概念
 ### 第二幕（{act2}-{act3}章）
 
 ### 第三幕（{act4}-{章节数}章）
-"""
-
-BIBLE_TEMPLATE = """# 世界观设定
+""",
+    "bible": """# 世界观设定
 
 ## 时代背景
 
@@ -224,9 +283,8 @@ BIBLE_TEMPLATE = """# 世界观设定
 1.
 2.
 3.
-"""
-
-ARC_TEMPLATE = """# 全书弧线骨架
+""",
+    "arc": """# 全书弧线骨架
 
 ## 全书情感曲线
 
@@ -254,243 +312,187 @@ ARC_TEMPLATE = """# 全书弧线骨架
 
 | 伏笔 | 埋设阶段 | 预计回收阶段 | 优先级 |
 |------|---------|-------------|--------|
-"""
-
-MAPPING_TEMPLATE = """# 章节顺序映射
+""",
+    "mapping": """# 章节顺序映射
 
 | 新书章号 | 源文章号 | 功能 | 匹配理由 |
 |---------|---------|------|---------|
 """
-
-HOOK_TEMPLATE = """# 钩子工程分析：第{N}章
-
-> 来源：{源书名} 第{N}章
-
-## 1. 段落钩子
-
-（填入：作者怎么在段落结尾勾住读者往下读？用了什么技法？引用原文例句）
-
-## 2. 章首钩子
-
-（填入：开头几段怎么抓住注意力？第一句话是什么类型的钩子？）
-
-## 3. 章末钩子
-
-（填入：结尾怎么让读者必须翻页？是悬念、反转、情感、还是信息缺口？）
-
-## 4. 情绪钩子
-
-（填入：作者怎么让读者在意角色？用了什么情感绑定技法？）
-
-## 5. 信息钩子
-
-（填入：作者怎么制造「想知道答案」的欲望？藏了什么信息？）
-
-## 6. 反预期钩子
-
-（填入：作者怎么打破读者预期？在哪里做了反转？效果是什么？）
-"""
-
-CHARACTER_TEMPLATE = """# 角色塑造分析：第{N}章
-
-> 来源：{源书名} 第{N}章
-
-## 1. 角色立体感
-
-（填入：作者怎么让角色感觉像真人？用了什么细节？引用原文例句）
-
-## 2. 性格外化技法
-
-（填入：作者怎么通过动作/对话/反应展示性格，而不是直说「她很XX」？）
-
-## 3. 角色差异化
-
-（填入：不同角色的说话方式、行为模式有什么区别？怎么一眼分出谁是谁？）
-
-## 4. 配角塑造
-
-（填入：配角怎么做到有存在感但不抢戏？用了什么技法？）
-
-## 5. 角色关系张力
-
-（填入：角色之间的关系怎么制造有趣/紧张/甜蜜的动态？）
-
-## 6. 角色成长暗示
-
-（填入：作者怎么暗示角色在变化？用了什么伏笔或细节？）
-"""
+}
 
 
-def create_style_templates(count, output_dir):
+def load_modes_config():
+    """从 analysis-modes.json 加载配置"""
+    with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def get_template(mode_name):
+    """获取模板内容：优先从 templates/ 目录读取，否则用默认模板"""
+    # 尝试从 templates/ 目录读取
+    template_path = os.path.join(TEMPLATES_DIR, f"{mode_name}.md")
+    if os.path.exists(template_path):
+        with open(template_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    
+    # 使用默认模板
+    if mode_name in DEFAULT_TEMPLATES:
+        return DEFAULT_TEMPLATES[mode_name]
+    
+    return None
+
+
+def create_guide_templates(mode_name, count, output_dir, use_config_dir=False):
+    """为指定模式创建指南模板"""
+    config = load_modes_config()
+    modes = config.get("modes", {})
+    
+    if mode_name not in modes:
+        print(f"Error: Mode '{mode_name}' not defined in analysis-modes.json")
+        print(f"Available modes: {', '.join(modes.keys())}")
+        return False
+    
+    mode_config = modes[mode_name]
+    if not mode_config.get("enabled", True):
+        print(f"Warning: Mode '{mode_name}' is disabled")
+        return False
+    
+    output_pattern = mode_config.get("output_pattern", f"{mode_name}_guide_{{N}}.md")
+    
+    # 只在 use_config_dir=True 时使用 json 中的 output_dir
+    if use_config_dir:
+        output_dir = mode_config.get("output_dir", output_dir)
+    
+    template = get_template(mode_name)
+    if template is None:
+        print(f"Error: Template not found for mode '{mode_name}'")
+        return False
+    
     os.makedirs(output_dir, exist_ok=True)
+    created = 0
     for i in range(1, count + 1):
-        path = os.path.join(output_dir, f"style_guide_{i}.md")
+        filename = output_pattern.replace("{N}", str(i))
+        path = os.path.join(output_dir, filename)
         if not os.path.exists(path):
             with open(path, 'w', encoding='utf-8') as f:
-                f.write(STYLE_TEMPLATE.replace("{N}", str(i)))
-    print(f"Created {count} style guide templates in {output_dir}")
+                f.write(template.replace("{N}", str(i)))
+            created += 1
+    
+    print(f"Created {created} {mode_name} guide templates in {output_dir}")
+    return True
 
 
-def create_plot_templates(count, output_dir):
-    os.makedirs(output_dir, exist_ok=True)
+def create_setup_templates(count, setting_dir, outline_dir):
+    """创建设定/大纲模板"""
+    os.makedirs(setting_dir, exist_ok=True)
+    os.makedirs(outline_dir, exist_ok=True)
+    
+    # 章纲模板
     for i in range(1, count + 1):
-        path = os.path.join(output_dir, f"plot_guide_{i}.md")
+        path = os.path.join(outline_dir, f"章纲_{i}.md")
         if not os.path.exists(path):
             with open(path, 'w', encoding='utf-8') as f:
-                f.write(PLOT_TEMPLATE.replace("{N}", str(i)))
-    print(f"Created {count} plot guide templates in {output_dir}")
-
-
-def create_hook_templates(count, output_dir):
-    os.makedirs(output_dir, exist_ok=True)
-    for i in range(1, count + 1):
-        path = os.path.join(output_dir, f"hook_guide_{i}.md")
-        if not os.path.exists(path):
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write(HOOK_TEMPLATE.replace("{N}", str(i)))
-    print(f"Created {count} hook guide templates in {output_dir}")
-
-
-def create_character_templates(count, output_dir):
-    os.makedirs(output_dir, exist_ok=True)
-    for i in range(1, count + 1):
-        path = os.path.join(output_dir, f"character_guide_{i}.md")
-        if not os.path.exists(path):
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write(CHARACTER_TEMPLATE.replace("{N}", str(i)))
-    print(f"Created {count} character guide templates in {output_dir}")
-
-
-def create_outline_templates(count, output_dir):
-    os.makedirs(output_dir, exist_ok=True)
-    for i in range(1, count + 1):
-        path = os.path.join(output_dir, f"章纲_{i}.md")
-        if not os.path.exists(path):
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write(OUTLINE_TEMPLATE.replace("{N}", str(i)))
-    print(f"Created {count} chapter outline templates in {output_dir}")
-
-
-def create_concept_template(output_dir, chapter_count=188):
-    os.makedirs(output_dir, exist_ok=True)
-    act1 = max(10, chapter_count // 6)
+                f.write(SETUP_TEMPLATES["outline"].replace("{N}", str(i)))
+    print(f"Created {count} outline templates in {outline_dir}")
+    
+    # 新书概念模板
+    act1 = max(10, count // 6)
     act2 = act1 + 1
-    act3 = act1 + chapter_count // 3
+    act3 = act1 + count // 3
     act4 = act3 + 1
-    content = CONCEPT_TEMPLATE.replace("{章节数}", str(chapter_count))
+    content = SETUP_TEMPLATES["concept"].replace("{章节数}", str(count))
     content = content.replace("{act1}", str(act1))
     content = content.replace("{act2}", str(act2))
     content = content.replace("{act3}", str(act3))
     content = content.replace("{act4}", str(act4))
-    path = os.path.join(output_dir, "新书概念.md")
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(content)
-    print(f"Created concept template in {output_dir}")
-
-
-def create_bible_template(output_dir):
-    os.makedirs(output_dir, exist_ok=True)
-    path = os.path.join(output_dir, "story_bible.md")
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(BIBLE_TEMPLATE)
-    print(f"Created story bible template in {output_dir}")
-
-
-def create_arc_template(output_dir, chapter_count=188):
-    os.makedirs(output_dir, exist_ok=True)
-    seg = chapter_count // 4
-    content = ARC_TEMPLATE.replace("{章节数}", str(chapter_count))
+    path = os.path.join(setting_dir, "新书概念.md")
+    if not os.path.exists(path):
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(content)
+    print(f"Created concept template in {setting_dir}")
+    
+    # 世界观模板
+    path = os.path.join(setting_dir, "story_bible.md")
+    if not os.path.exists(path):
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(SETUP_TEMPLATES["bible"])
+    print(f"Created story bible template in {setting_dir}")
+    
+    # 弧线骨架模板
+    seg = count // 4
+    content = SETUP_TEMPLATES["arc"].replace("{章节数}", str(count))
     content = content.replace("{seg1}", str(seg))
     content = content.replace("{seg2}", str(seg + 1))
     content = content.replace("{seg3}", str(seg * 2))
     content = content.replace("{seg4}", str(seg * 2 + 1))
     content = content.replace("{seg5}", str(seg * 3))
     content = content.replace("{seg6}", str(seg * 3 + 1))
-    path = os.path.join(output_dir, "全书弧线骨架.md")
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(content)
-    print(f"Created arc skeleton template in {output_dir}")
+    path = os.path.join(setting_dir, "全书弧线骨架.md")
+    if not os.path.exists(path):
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(content)
+    print(f"Created arc skeleton template in {setting_dir}")
+    
+    # 章节映射模板
+    path = os.path.join(setting_dir, "章节顺序.md")
+    if not os.path.exists(path):
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(SETUP_TEMPLATES["mapping"])
+    print(f"Created chapter mapping template in {setting_dir}")
 
 
-def create_mapping_template(output_dir):
-    os.makedirs(output_dir, exist_ok=True)
-    path = os.path.join(output_dir, "章节顺序.md")
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(MAPPING_TEMPLATE)
-    print(f"Created chapter mapping template in {output_dir}")
+def list_modes():
+    """列出所有可用模式"""
+    config = load_modes_config()
+    modes = config.get("modes", {})
+    
+    print("Available modes:")
+    for name, mode in sorted(modes.items(), key=lambda x: x[1].get("order", 99)):
+        status = "ON" if mode.get("enabled", True) else "OFF"
+        priority = mode.get("priority", "-")
+        description = mode.get("description", "")
+        print(f"  [{status}] {name} (priority:{priority}) - {description}")
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         print("用法:")
-        print("  python create_templates.py style <章节数> <输出目录>")
-        print("  python create_templates.py hook <章节数> <输出目录>")
-        print("  python create_templates.py character <章节数> <输出目录>")
-        print("  python create_templates.py plot <章节数> <输出目录>")
-        print("  python create_templates.py outline <章节数> <输出目录>")
-        print("  python create_templates.py concept <输出目录> [章节数]")
-        print("  python create_templates.py bible <输出目录>")
-        print("  python create_templates.py arc <输出目录>")
-        print("  python create_templates.py mapping <输出目录>")
+        print("  python create_templates.py <模式> <章节数> <输出目录>")
+        print("  python create_templates.py all <章节数> <输出目录>")
         print("  python create_templates.py setup <章节数> <设定目录> <大纲目录>")
-        print("  python create_templates.py all <章节数> <蒸馏目录> <设定目录> <大纲目录>")
+        print("  python create_templates.py list")
+        print("")
+        list_modes()
         sys.exit(1)
-
-    template_type = sys.argv[1]
-
-    if template_type == 'style':
-        count = int(sys.argv[2])
-        output_dir = sys.argv[3] if len(sys.argv) > 3 else '.'
-        create_style_templates(count, output_dir)
-    elif template_type == 'hook':
-        count = int(sys.argv[2])
-        output_dir = sys.argv[3] if len(sys.argv) > 3 else '.'
-        create_hook_templates(count, output_dir)
-    elif template_type == 'character':
-        count = int(sys.argv[2])
-        output_dir = sys.argv[3] if len(sys.argv) > 3 else '.'
-        create_character_templates(count, output_dir)
-    elif template_type == 'plot':
-        count = int(sys.argv[2])
-        output_dir = sys.argv[3] if len(sys.argv) > 3 else '.'
-        create_plot_templates(count, output_dir)
-    elif template_type == 'outline':
-        count = int(sys.argv[2])
-        output_dir = sys.argv[3] if len(sys.argv) > 3 else '.'
-        create_outline_templates(count, output_dir)
-    elif template_type == 'concept':
-        output_dir = sys.argv[2]
-        chapter_count = int(sys.argv[3]) if len(sys.argv) > 3 else 188
-        create_concept_template(output_dir, chapter_count)
-    elif template_type == 'bible':
-        create_bible_template(sys.argv[2])
-    elif template_type == 'arc':
-        create_arc_template(sys.argv[2])
-    elif template_type == 'mapping':
-        create_mapping_template(sys.argv[2])
-    elif template_type == 'setup':
+    
+    command = sys.argv[1]
+    
+    if command == 'list':
+        list_modes()
+    elif command == 'setup':
+        if len(sys.argv) < 5:
+            print("用法: python create_templates.py setup <章节数> <设定目录> <大纲目录>")
+            sys.exit(1)
         count = int(sys.argv[2])
         setting_dir = sys.argv[3]
         outline_dir = sys.argv[4]
-        create_outline_templates(count, outline_dir)
-        create_concept_template(setting_dir, count)
-        create_bible_template(setting_dir)
-        create_arc_template(setting_dir, count)
-        create_mapping_template(setting_dir)
-    elif template_type == 'all':
+        create_setup_templates(count, setting_dir, outline_dir)
+    elif command == 'all':
+        if len(sys.argv) < 4:
+            print("用法: python create_templates.py all <章节数> <输出目录>")
+            sys.exit(1)
         count = int(sys.argv[2])
-        distill_dir = sys.argv[3]
-        setting_dir = sys.argv[4]
-        outline_dir = sys.argv[5]
-        create_style_templates(count, distill_dir)
-        create_hook_templates(count, distill_dir)
-        create_character_templates(count, distill_dir)
-        create_plot_templates(count, distill_dir)
-        create_outline_templates(count, outline_dir)
-        create_concept_template(setting_dir, count)
-        create_bible_template(setting_dir)
-        create_arc_template(setting_dir, count)
-        create_mapping_template(setting_dir)
+        output_dir = sys.argv[3]
+        config = load_modes_config()
+        modes = config.get("modes", {})
+        for mode_name in sorted(modes.keys(), key=lambda x: modes[x].get("order", 99)):
+            if modes[mode_name].get("enabled", True):
+                create_guide_templates(mode_name, count, output_dir)
     else:
-        print(f"未知类型: {template_type}")
-        sys.exit(1)
+        # 单个模式
+        if len(sys.argv) < 4:
+            print(f"用法: python create_templates.py {command} <章节数> <输出目录>")
+            sys.exit(1)
+        count = int(sys.argv[2])
+        output_dir = sys.argv[3]
+        create_guide_templates(command, count, output_dir)
