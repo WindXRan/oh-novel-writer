@@ -117,9 +117,9 @@ def _exact_para_single(text):
 
 
 def _exact_dialogue_count(text):
-    """统计对话句数量（含引号的行）"""
+    """统计对话句数量（含各种引号）"""
     import re
-    return len(re.findall(r'[""「]', text))
+    return len(re.findall(r'[\u201c\u201d\u2018\u2019\u300c\u300e"]', text))
 
 
 def _first_words_variety(text):
