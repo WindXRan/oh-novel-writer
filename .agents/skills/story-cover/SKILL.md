@@ -9,7 +9,7 @@ description: |
 
 ## 功能
 
-根据书名、作者名、题材风格，自动生成专业级网文封面。
+根据书名、作者名、题材风格，生成封面prompt。默认只输出prompt，用户可自行去DALL-E/Midjourney/可灵等平台生成封面。
 
 ## 使用方式
 
@@ -21,13 +21,62 @@ description: |
 - 书名
 - 作者名（可选）
 - 题材风格（可选，会自动分析）
+- OpenAI API Key（可选，提供则直接生成封面）
 
 ## 流程
 
 1. 分析书名，判断题材风格（古言/现言/玄幻/都市等）
 2. 生成封面 prompt（含标题文字、署名、风格描述）
-3. 调用 GPT-Image-2 生成封面
-4. 输出 PNG 文件
+3. **默认**：输出prompt，用户自行生成
+4. **有key**：调用 `gpt-image-2` 模型生成封面，输出 PNG 文件
+
+## 输出格式
+
+### 默认（无key）
+
+```
+## 封面Prompt
+
+（可直接复制到 DALL-E / Midjourney / 可灵 使用）
+
+prompt: ...
+```
+
+### 有key
+
+```
+正在生成封面...
+封面已保存：{书名}_封面.png
+```
+
+## API调用示例（用户提供key时）
+
+```python
+from openai import OpenAI
+import base64
+
+client = OpenAI(api_key="your_openai_api_key")
+
+response = client.images.generate(
+    model="gpt-image-2",
+    prompt="封面prompt...",
+    size="1024x1536",  # 竖版封面
+    quality="high",
+    n=1
+)
+
+image_data = base64.b64decode(response.data[0].b64_json)
+with open("cover.png", "wb") as f:
+    f.write(image_data)
+```
+
+## 注意事项
+
+- 默认只输出prompt，不调用API
+- 用户提供OpenAI key时才生成封面
+- 必须使用 `gpt-image-2` 模型
+- 尺寸建议：`1024x1536`（竖版）或 `1536x1024`（横版）
+- 不支持DeepSeek，只支持OpenAI
 
 ## 输出
 
