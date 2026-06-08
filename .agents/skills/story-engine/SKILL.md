@@ -37,13 +37,17 @@ projects/{作者名}/{源书名}/
 
 详见 `网文小说仿写教学.md`
 
-## Pipeline（4 阶段）
+## Pipeline（4 阶段 + 自动导出）
 
 ```
-Phase 1: 开书 (pro, 1 call)   → concept.md
-Phase 2: Guides (flash, 2N parallel) → plot_{N}.md + style_{N}.md
-Phase 3: 写章 (flash, N parallel)    → ch_{N}.txt
-Phase 4: 对比 (本地)                  → compare/对比报告.md
+Phase 1:   开书 (pro, 1 call)        → concept.md
+Phase 1.5: 风格画像 (pro, 1 call)    → style-profile.md（全局参数，注入 system prompt）
+Phase 2:   Guides (flash, 2N 并行)   → plot_{N}.md + style_{N}.md
+Phase 3:   写章 (flash, N 并行)      → ch_{N}.txt（章名自生成）
+Phase 3.5: Trim (flash)              → 超字数 20% 的章自动精简
+Phase 3.6: 衔接修复 (flash, N-1 并行) → 修章间重叠
+Phase 4:   对比 (本地)                → compare/报告
+Phase 5:   自动导出                    → export/{书名}.txt（写章完成后自动执行）
 ```
 
 ## Agent/API 双模式
@@ -89,6 +93,16 @@ python tools/rewrite_chapters.py --config configs/xxx.json --phase write,compare
 | `plot-guide.md` | 章纲 | 源文第N章 + concept | 节拍映射表 + 换皮检验 |
 | `style-guide.md` | 风格 | 源文第N章 | 定量锚点 + 去AI指令 |
 | `write-chapter.md` | 写章 | plot_guide + style_guide | ch_{N}.txt |
+
+## 配套 Skills
+
+| Skill | 用途 | 触发词 |
+|-------|------|--------|
+| `story-blurb` | 书名+简介生成 | 「写简介」「书名」 |
+| `story-cover` | 封面生成（默认输出prompt） | 「封面」「生成封面」 |
+| `story-compare` | 对比报告 | 「跑对比」「对比」 |
+| `story-style` | 源文风格分析 | 「分析风格」「提取风格」 |
+| `story-scan` | 番茄排行榜分析 | 「番茄扫描」「番茄数据」 |
 
 ## 对比
 
