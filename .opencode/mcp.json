@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "novel-writing": {
+      "command": "python",
+      "args": [".mcp/server.py"],
+      "env": {
+        "API_KEY": "${API_KEY}",
+        "API_BASE_URL": "${API_BASE_URL:-https://api.deepseek.com}"
+      },
+      "cwd": "C:\\Users\\Administrator\\Documents\\trae_projects\\AI网文小说项目"
+    }
+  }
+}
