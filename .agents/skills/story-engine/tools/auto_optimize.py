@@ -125,6 +125,8 @@ def auto_optimize(config, start, end, max_iterations=3):
     
     best_score = 0
     best_iteration = 0
+    best_scores = {}
+    all_results = []
     prompts_dir = config.get("prompts_dir", ".agents/skills/story-engine/prompts")
     
     # 第一轮：先运行pipeline生成章节
@@ -156,16 +158,26 @@ def auto_optimize(config, start, end, max_iterations=3):
         print(f"  风格分: {scores.get('style', '?')}/10")
         print(f"  总分: {scores.get('total', '?')}/10")
         
+        # 记录本轮结果
+        all_results.append({
+            "iteration": iteration,
+            "scores": scores.copy(),
+            "analysis": analysis
+        })
+        
         # 2. 检查是否达标
         total_score = scores.get('total', 0)
         if total_score >= 7:
             print(f"\n[OK] 达标！总分{total_score}≥7，停止优化")
-            return scores, analysis
+            best_scores = scores
+            best_iteration = iteration
+            break
         
         # 3. 记录最佳
         if total_score > best_score:
             best_score = total_score
             best_iteration = iteration
+            best_scores = scores.copy()
         
         # 4. 保存分析结果
         compare_dir = Path(config["rewrites_dir"]) / "compare"
@@ -176,7 +188,7 @@ def auto_optimize(config, start, end, max_iterations=3):
         # 5. 如果是最后一轮，不优化了
         if iteration == max_iterations:
             print(f"\n[END] 达到最大迭代次数，最佳: 第{best_iteration}轮, 总分{best_score}")
-            return scores, analysis
+            break
         
         # 6. 根据分析自动优化prompt
         print(f"  [2] 根据分析优化prompt...")
@@ -201,7 +213,10 @@ def auto_optimize(config, start, end, max_iterations=3):
         except Exception as e:
             print(f"  [WARN] pipeline运行失败: {e}")
     
-    return scores, analysis
+    # 生成完整报告
+    report = generate_report(config, start, end, all_results, best_iteration, best_scores)
+    
+    return best_scores, report
 
 
 def optimize_prompts(analysis, prompts_dir, scores):
