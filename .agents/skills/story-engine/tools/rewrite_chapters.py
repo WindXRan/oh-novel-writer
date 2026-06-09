@@ -1076,33 +1076,57 @@ def open_reader(config):
     # 获取第一本书的路径（相对于项目根目录）
     first_book = book_files[0].replace("\\", "/")
     
-    # 检查story-scan服务器是否已运行
+    # 检查web服务器是否已运行
+    web_running = False
+    api_running = False
+    
     try:
         import urllib.request
         urllib.request.urlopen("http://localhost:8000", timeout=2)
-        # 服务器已运行，直接打开
-        url = f"http://localhost:8000/book.html?file={first_book}"
-        print(f"阅读器地址: {url}")
-        webbrowser.open(url)
+        web_running = True
     except:
-        # 服务器未运行，启动它
-        print("启动story-scan服务器...")
+        pass
+    
+    try:
+        import urllib.request
+        urllib.request.urlopen("http://localhost:8001", timeout=2)
+        api_running = True
+    except:
+        pass
+    
+    # 启动缺失的服务器
+    if not web_running:
+        print("启动web服务器...")
         try:
-            proc = subprocess.Popen(
+            subprocess.Popen(
                 ["python", "-m", "http.server", "8000"],
                 cwd=scan_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            import time
-            time.sleep(2)
-            
-            url = f"http://localhost:8000/book.html?file={first_book}"
-            print(f"阅读器地址: {url}")
-            webbrowser.open(url)
-            print(f"服务器已在后台运行")
         except Exception as e:
-            print(f"[WARN] 启动阅读器失败: {e}")
+            print(f"[WARN] 启动web服务器失败: {e}")
+    
+    if not api_running:
+        print("启动API服务器...")
+        try:
+            subprocess.Popen(
+                ["python", "api/book_content.py"],
+                cwd=scan_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except Exception as e:
+            print(f"[WARN] 启动API服务器失败: {e}")
+    
+    # 等待服务器启动
+    import time
+    time.sleep(2)
+    
+    # 打开阅读器
+    url = f"http://localhost:8000/book.html?file={first_book}"
+    print(f"阅读器地址: {url}")
+    webbrowser.open(url)
 
 
 # ============================================================
