@@ -1,0 +1,29 @@
+{
+  "total_chars": 1957,
+  "total_sentences": 99,
+  "avg_sentence_len": 18.5,
+  "sentence_len_std": 14.6,
+  "avg_paragraph_len": 26,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 103
+  },
+  "single_para_ratio": 81.1,
+  "dialogue_ratio": 37.6,
+  "short_ratio": 54.5,
+  "long_ratio": 19.2,
+  "vocabulary_diversity": 0.312,
+  "top_patterns": [
+    "原溯...(16次)",
+    "陈律...(4次)",
+    "律师...(3次)",
+    "他想...(3次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 4,
+  "ai_marker_count": 2,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 3,
+  "chapter": 127,
+  "file": "第127章.txt"
+}

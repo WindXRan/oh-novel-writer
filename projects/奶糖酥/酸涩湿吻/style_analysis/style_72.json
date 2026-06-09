@@ -1,0 +1,28 @@
+{
+  "total_chars": 1681,
+  "total_sentences": 85,
+  "avg_sentence_len": 18.4,
+  "sentence_len_std": 13.2,
+  "avg_paragraph_len": 22,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 61
+  },
+  "single_para_ratio": 85.1,
+  "dialogue_ratio": 20.1,
+  "short_ratio": 55.3,
+  "long_ratio": 25.9,
+  "vocabulary_diversity": 0.31,
+  "top_patterns": [
+    "蒲雨...(11次)",
+    "蒲志...(5次)",
+    "原溯...(5次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 4,
+  "ai_marker_count": 4,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 7,
+  "chapter": 72,
+  "file": "第72章.txt"
+}

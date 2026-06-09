@@ -1,0 +1,29 @@
+{
+  "total_chars": 2816,
+  "total_sentences": 135,
+  "avg_sentence_len": 19.7,
+  "sentence_len_std": 14.1,
+  "avg_paragraph_len": 24,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 86
+  },
+  "single_para_ratio": 91.5,
+  "dialogue_ratio": 15.5,
+  "short_ratio": 47.4,
+  "long_ratio": 25.2,
+  "vocabulary_diversity": 0.29,
+  "top_patterns": [
+    "蒲雨...(10次)",
+    "原溯...(9次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(2处)"
+  ],
+  "simile_count": 6,
+  "ai_marker_count": 2,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 14,
+  "chapter": 57,
+  "file": "第57章.txt"
+}

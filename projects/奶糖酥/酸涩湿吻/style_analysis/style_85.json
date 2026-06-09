@@ -1,0 +1,29 @@
+{
+  "total_chars": 2326,
+  "total_sentences": 134,
+  "avg_sentence_len": 16.0,
+  "sentence_len_std": 9.5,
+  "avg_paragraph_len": 21,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 73
+  },
+  "single_para_ratio": 81.1,
+  "dialogue_ratio": 21.2,
+  "short_ratio": 53.7,
+  "long_ratio": 10.4,
+  "vocabulary_diversity": 0.288,
+  "top_patterns": [
+    "蒲雨...(20次)",
+    "“你...(6次)",
+    "”蒲...(5次)",
+    "“我...(3次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 6,
+  "ai_marker_count": 1,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 3,
+  "chapter": 85,
+  "file": "第85章.txt"
+}

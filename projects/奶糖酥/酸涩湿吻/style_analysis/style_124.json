@@ -1,0 +1,32 @@
+{
+  "total_chars": 2285,
+  "total_sentences": 127,
+  "avg_sentence_len": 16.8,
+  "sentence_len_std": 12.5,
+  "avg_paragraph_len": 21,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 73
+  },
+  "single_para_ratio": 88.8,
+  "dialogue_ratio": 19.9,
+  "short_ratio": 55.1,
+  "long_ratio": 15.0,
+  "vocabulary_diversity": 0.261,
+  "top_patterns": [
+    "蒲雨...(10次)",
+    "原溯...(9次)",
+    "”她...(7次)",
+    "看着...(3次)",
+    "她的...(3次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(4处)"
+  ],
+  "simile_count": 11,
+  "ai_marker_count": 1,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 4,
+  "chapter": 124,
+  "file": "第124章.txt"
+}

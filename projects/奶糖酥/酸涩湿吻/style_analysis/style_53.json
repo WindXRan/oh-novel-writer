@@ -1,0 +1,32 @@
+{
+  "total_chars": 2247,
+  "total_sentences": 115,
+  "avg_sentence_len": 18.3,
+  "sentence_len_std": 13.6,
+  "avg_paragraph_len": 27,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 94
+  },
+  "single_para_ratio": 84.5,
+  "dialogue_ratio": 28.9,
+  "short_ratio": 52.2,
+  "long_ratio": 22.6,
+  "vocabulary_diversity": 0.295,
+  "top_patterns": [
+    "原鸿...(12次)",
+    "原溯...(9次)",
+    "“阿...(4次)",
+    "少年...(3次)",
+    "”原...(3次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(5处)"
+  ],
+  "simile_count": 7,
+  "ai_marker_count": 3,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 15,
+  "chapter": 53,
+  "file": "第53章.txt"
+}

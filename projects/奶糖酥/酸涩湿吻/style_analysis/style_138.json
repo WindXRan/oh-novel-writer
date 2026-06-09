@@ -1,0 +1,32 @@
+{
+  "total_chars": 3010,
+  "total_sentences": 146,
+  "avg_sentence_len": 19.5,
+  "sentence_len_std": 15.2,
+  "avg_paragraph_len": 23,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 90
+  },
+  "single_para_ratio": 91.5,
+  "dialogue_ratio": 8.4,
+  "short_ratio": 50.7,
+  "long_ratio": 19.2,
+  "vocabulary_diversity": 0.276,
+  "top_patterns": [
+    "原溯...(12次)",
+    "他想...(4次)",
+    "蒲雨...(4次)",
+    "飞机...(3次)",
+    "那个...(3次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(4处)"
+  ],
+  "simile_count": 7,
+  "ai_marker_count": 0,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 7,
+  "chapter": 138,
+  "file": "第138章.txt"
+}

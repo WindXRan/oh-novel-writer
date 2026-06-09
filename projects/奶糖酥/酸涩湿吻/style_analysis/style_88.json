@@ -1,0 +1,29 @@
+{
+  "total_chars": 1882,
+  "total_sentences": 101,
+  "avg_sentence_len": 17.5,
+  "sentence_len_std": 10.8,
+  "avg_paragraph_len": 20,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 63
+  },
+  "single_para_ratio": 93.6,
+  "dialogue_ratio": 15.1,
+  "short_ratio": 51.5,
+  "long_ratio": 13.9,
+  "vocabulary_diversity": 0.312,
+  "top_patterns": [
+    "蒲雨...(10次)",
+    "“这...(3次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(2处)"
+  ],
+  "simile_count": 7,
+  "ai_marker_count": 1,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 2,
+  "chapter": 88,
+  "file": "第88章.txt"
+}

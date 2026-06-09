@@ -1,0 +1,29 @@
+{
+  "total_chars": 2154,
+  "total_sentences": 115,
+  "avg_sentence_len": 17.5,
+  "sentence_len_std": 10.9,
+  "avg_paragraph_len": 22,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 67
+  },
+  "single_para_ratio": 87.6,
+  "dialogue_ratio": 18.4,
+  "short_ratio": 52.2,
+  "long_ratio": 13.9,
+  "vocabulary_diversity": 0.281,
+  "top_patterns": [
+    "原溯...(11次)",
+    "蒲雨...(9次)",
+    "阳光...(3次)",
+    "宋津...(3次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 2,
+  "ai_marker_count": 4,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 4,
+  "chapter": 66,
+  "file": "第66章.txt"
+}

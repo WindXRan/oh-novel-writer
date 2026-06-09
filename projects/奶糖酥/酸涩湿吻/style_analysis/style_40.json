@@ -1,0 +1,29 @@
+{
+  "total_chars": 1855,
+  "total_sentences": 78,
+  "avg_sentence_len": 22.4,
+  "sentence_len_std": 14.6,
+  "avg_paragraph_len": 26,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 70
+  },
+  "single_para_ratio": 93.1,
+  "dialogue_ratio": 32.4,
+  "short_ratio": 37.2,
+  "long_ratio": 34.6,
+  "vocabulary_diversity": 0.33,
+  "top_patterns": [
+    "原溯...(10次)",
+    "蒲雨...(8次)",
+    "陆蓁...(4次)",
+    "“那...(3次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 2,
+  "ai_marker_count": 0,
+  "direct_emotion_count": 1,
+  "ellipsis_count": 4,
+  "chapter": 40,
+  "file": "第40章.txt"
+}

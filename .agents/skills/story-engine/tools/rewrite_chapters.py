@@ -93,7 +93,7 @@ def count_source_chars(config, chapter_num):
 
     patterns = [
         f"projects/{author}/{source_book}/_cache/chapters/第{chapter_num}章*.txt",
-        f"novel-download-authors/{author}/{source_book}/源文/第{chapter_num}章*.txt",
+        f"projects/{author}/{source_book}/源文/第{chapter_num}章*.txt",
     ]
     import glob as g
     for pat in patterns:
@@ -222,8 +222,8 @@ def get_source_title(config, chapter_num):
     patterns = [
         f"projects/{author}/{source_book}/_cache/chapters/第{chapter_num}章*.txt",
         f"projects/{author}/{source_book}/_cache/chapters/第{chapter_num:03d}章*.txt",
-        f"novel-download-authors/{author}/{source_book}/源文/第{chapter_num}章*.txt",
-        f"novel-download-authors/{author}/{source_book}/第{chapter_num}章*.txt",
+        f"projects/{author}/{source_book}/源文/第{chapter_num}章*.txt",
+        f"projects/{author}/{source_book}/第{chapter_num}章*.txt",
     ]
 
     import glob
@@ -277,7 +277,7 @@ def phase_prep(config):
             Path(base_dir) / "projects" / f"{source_book}.txt",
             Path(base_dir) / "projects" / author / f"{source_book}.txt",
             Path(base_dir) / "projects" / author / source_book / f"{source_book}.txt",
-            Path(base_dir) / "novel-download-authors" / author / f"{source_book}.txt",
+            Path(base_dir) / "projects" / author / f"{source_book}.txt",
             Path(base_dir) / f"{source_book}.txt",
         ]
         raw_txt = None
@@ -312,7 +312,7 @@ def phase_prep(config):
         chapters_dirs = [
             cache_dir / "chapters",
             Path(base_dir) / "projects" / author / source_book / "源文",
-            Path(base_dir) / "novel-download-authors" / author / source_book / "源文",
+            Path(base_dir) / "projects" / author / source_book / "源文",
         ]
         chapter_files = []
         for d in chapters_dirs:
@@ -405,7 +405,7 @@ def extract_source_metrics(config, ch):
     patterns = [
         f"projects/{author}/{source_book}/_cache/chapters/第{ch}章*.txt",
         f"projects/{author}/{source_book}/_cache/chapters/第{ch:03d}章*.txt",
-        f"novel-download-authors/{author}/{source_book}/源文/第{ch}章*.txt",
+        f"projects/{author}/{source_book}/源文/第{ch}章*.txt",
     ]
     
     import glob
@@ -633,7 +633,7 @@ def get_source_text(config, ch):
 
     patterns = [
         f"projects/{author}/{source_book}/_cache/chapters/第{ch}章*.txt",
-        f"novel-download-authors/{author}/{source_book}/源文/第{ch}章*.txt",
+        f"projects/{author}/{source_book}/源文/第{ch}章*.txt",
     ]
     import glob as g
     for pat in patterns:
@@ -1009,7 +1009,7 @@ def get_chapters_list(config, include_fanwai=False):
     # 查找章节目录
     patterns = [
         f"projects/{author}/{source_book}/_cache/chapters/",
-        f"novel-download-authors/{author}/{source_book}/源文/",
+        f"projects/{author}/{source_book}/源文/",
     ]
     
     chapters_dir = None

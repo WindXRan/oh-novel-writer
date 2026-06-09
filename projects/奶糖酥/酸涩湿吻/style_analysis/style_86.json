@@ -1,0 +1,27 @@
+{
+  "total_chars": 1835,
+  "total_sentences": 104,
+  "avg_sentence_len": 16.4,
+  "sentence_len_std": 12.1,
+  "avg_paragraph_len": 23,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 96
+  },
+  "single_para_ratio": 78.8,
+  "dialogue_ratio": 36.0,
+  "short_ratio": 59.6,
+  "long_ratio": 11.5,
+  "vocabulary_diversity": 0.34,
+  "top_patterns": [
+    "蒲雨...(13次)",
+    "”蒲...(3次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 2,
+  "ai_marker_count": 1,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 4,
+  "chapter": 86,
+  "file": "第86章.txt"
+}

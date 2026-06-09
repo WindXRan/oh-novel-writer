@@ -1,0 +1,29 @@
+{
+  "total_chars": 1999,
+  "total_sentences": 88,
+  "avg_sentence_len": 21.4,
+  "sentence_len_std": 14.0,
+  "avg_paragraph_len": 30,
+  "paragraph_len_range": {
+    "min": 7,
+    "max": 91
+  },
+  "single_para_ratio": 77.6,
+  "dialogue_ratio": 44.6,
+  "short_ratio": 42.0,
+  "long_ratio": 25.0,
+  "vocabulary_diversity": 0.293,
+  "top_patterns": [
+    "李素...(6次)",
+    "程司...(3次)",
+    "教室...(3次)",
+    "”李...(3次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 2,
+  "ai_marker_count": 5,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 3,
+  "chapter": 67,
+  "file": "第67章.txt"
+}

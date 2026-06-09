@@ -1,0 +1,29 @@
+{
+  "total_chars": 1932,
+  "total_sentences": 89,
+  "avg_sentence_len": 20.4,
+  "sentence_len_std": 14.5,
+  "avg_paragraph_len": 25,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 66
+  },
+  "single_para_ratio": 89.7,
+  "dialogue_ratio": 25.9,
+  "short_ratio": 42.7,
+  "long_ratio": 22.5,
+  "vocabulary_diversity": 0.305,
+  "top_patterns": [
+    "蒲雨...(13次)",
+    "原溯...(3次)",
+    "许岁...(3次)",
+    "程司...(3次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 4,
+  "ai_marker_count": 2,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 6,
+  "chapter": 32,
+  "file": "第32章.txt"
+}

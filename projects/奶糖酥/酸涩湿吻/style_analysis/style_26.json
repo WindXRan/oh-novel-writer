@@ -1,0 +1,30 @@
+{
+  "total_chars": 2192,
+  "total_sentences": 94,
+  "avg_sentence_len": 21.9,
+  "sentence_len_std": 15.3,
+  "avg_paragraph_len": 26,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 74
+  },
+  "single_para_ratio": 93.9,
+  "dialogue_ratio": 20.9,
+  "short_ratio": 43.6,
+  "long_ratio": 29.8,
+  "vocabulary_diversity": 0.308,
+  "top_patterns": [
+    "原溯...(10次)",
+    "蒲雨...(8次)",
+    "陆蓁...(7次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(2处)"
+  ],
+  "simile_count": 4,
+  "ai_marker_count": 1,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 5,
+  "chapter": 26,
+  "file": "第26章.txt"
+}

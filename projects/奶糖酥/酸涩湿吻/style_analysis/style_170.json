@@ -1,0 +1,24 @@
+{
+  "total_chars": 1357,
+  "total_sentences": 59,
+  "avg_sentence_len": 22.1,
+  "sentence_len_std": 15.9,
+  "avg_paragraph_len": 27,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 92
+  },
+  "single_para_ratio": 88.2,
+  "dialogue_ratio": 2.4,
+  "short_ratio": 40.7,
+  "long_ratio": 23.7,
+  "vocabulary_diversity": 0.358,
+  "top_patterns": [],
+  "rhetorical_features": [],
+  "simile_count": 6,
+  "ai_marker_count": 4,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 0,
+  "chapter": 170,
+  "file": "第170章.txt"
+}

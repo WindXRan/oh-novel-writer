@@ -1,0 +1,31 @@
+{
+  "total_chars": 1962,
+  "total_sentences": 102,
+  "avg_sentence_len": 17.9,
+  "sentence_len_std": 11.5,
+  "avg_paragraph_len": 21,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 74
+  },
+  "single_para_ratio": 92.2,
+  "dialogue_ratio": 16.4,
+  "short_ratio": 45.1,
+  "long_ratio": 13.7,
+  "vocabulary_diversity": 0.311,
+  "top_patterns": [
+    "蒲雨...(12次)",
+    "原溯...(6次)",
+    "陆蓁...(4次)",
+    "“新...(3次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(3处)"
+  ],
+  "simile_count": 3,
+  "ai_marker_count": 2,
+  "direct_emotion_count": 1,
+  "ellipsis_count": 4,
+  "chapter": 63,
+  "file": "第63章.txt"
+}

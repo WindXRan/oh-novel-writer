@@ -1,0 +1,32 @@
+{
+  "total_chars": 2147,
+  "total_sentences": 105,
+  "avg_sentence_len": 19.2,
+  "sentence_len_std": 12.8,
+  "avg_paragraph_len": 26,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 82
+  },
+  "single_para_ratio": 79.5,
+  "dialogue_ratio": 29.1,
+  "short_ratio": 45.7,
+  "long_ratio": 21.0,
+  "vocabulary_diversity": 0.311,
+  "top_patterns": [
+    "蒲雨...(13次)",
+    "陈姐...(9次)",
+    "”陈...(4次)",
+    "”蒲...(4次)",
+    "“苏...(4次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(4处)"
+  ],
+  "simile_count": 5,
+  "ai_marker_count": 1,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 3,
+  "chapter": 133,
+  "file": "第133章.txt"
+}

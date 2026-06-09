@@ -1,0 +1,30 @@
+{
+  "total_chars": 2114,
+  "total_sentences": 103,
+  "avg_sentence_len": 19.4,
+  "sentence_len_std": 14.4,
+  "avg_paragraph_len": 23,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 72
+  },
+  "single_para_ratio": 93.3,
+  "dialogue_ratio": 5.6,
+  "short_ratio": 50.5,
+  "long_ratio": 26.2,
+  "vocabulary_diversity": 0.327,
+  "top_patterns": [
+    "蒲雨...(10次)",
+    "原溯...(5次)",
+    "他的...(3次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(5处)"
+  ],
+  "simile_count": 8,
+  "ai_marker_count": 4,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 7,
+  "chapter": 121,
+  "file": "第121章.txt"
+}

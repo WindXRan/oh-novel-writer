@@ -1,0 +1,32 @@
+{
+  "total_chars": 2386,
+  "total_sentences": 132,
+  "avg_sentence_len": 16.8,
+  "sentence_len_std": 12.1,
+  "avg_paragraph_len": 24,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 113
+  },
+  "single_para_ratio": 75.3,
+  "dialogue_ratio": 32.2,
+  "short_ratio": 50.8,
+  "long_ratio": 13.6,
+  "vocabulary_diversity": 0.295,
+  "top_patterns": [
+    "蒲雨...(7次)",
+    "”蒲...(5次)",
+    "许岁...(5次)",
+    "“你...(4次)",
+    "宋津...(4次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(2处)"
+  ],
+  "simile_count": 3,
+  "ai_marker_count": 1,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 3,
+  "chapter": 87,
+  "file": "第87章.txt"
+}

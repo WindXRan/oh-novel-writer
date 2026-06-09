@@ -1,0 +1,32 @@
+{
+  "total_chars": 2231,
+  "total_sentences": 126,
+  "avg_sentence_len": 16.5,
+  "sentence_len_std": 11.8,
+  "avg_paragraph_len": 23,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 112
+  },
+  "single_para_ratio": 80.4,
+  "dialogue_ratio": 21.2,
+  "short_ratio": 55.6,
+  "long_ratio": 13.5,
+  "vocabulary_diversity": 0.289,
+  "top_patterns": [
+    "蒲雨...(18次)",
+    "李素...(5次)",
+    "原溯...(4次)",
+    "”她...(3次)",
+    "宋津...(3次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(2处)"
+  ],
+  "simile_count": 4,
+  "ai_marker_count": 2,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 5,
+  "chapter": 146,
+  "file": "第146章.txt"
+}

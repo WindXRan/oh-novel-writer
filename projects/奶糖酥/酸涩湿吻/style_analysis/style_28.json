@@ -1,0 +1,29 @@
+{
+  "total_chars": 2108,
+  "total_sentences": 94,
+  "avg_sentence_len": 21.1,
+  "sentence_len_std": 12.7,
+  "avg_paragraph_len": 25,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 67
+  },
+  "single_para_ratio": 91.8,
+  "dialogue_ratio": 28.6,
+  "short_ratio": 42.6,
+  "long_ratio": 26.6,
+  "vocabulary_diversity": 0.298,
+  "top_patterns": [
+    "蒲雨...(14次)",
+    "原溯...(11次)",
+    "“我...(4次)",
+    "许岁...(3次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 3,
+  "ai_marker_count": 5,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 4,
+  "chapter": 28,
+  "file": "第28章.txt"
+}

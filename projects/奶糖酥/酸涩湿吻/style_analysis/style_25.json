@@ -1,0 +1,28 @@
+{
+  "total_chars": 1862,
+  "total_sentences": 81,
+  "avg_sentence_len": 21.9,
+  "sentence_len_std": 14.0,
+  "avg_paragraph_len": 24,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 63
+  },
+  "single_para_ratio": 97.4,
+  "dialogue_ratio": 14.3,
+  "short_ratio": 35.8,
+  "long_ratio": 28.4,
+  "vocabulary_diversity": 0.341,
+  "top_patterns": [
+    "蒲雨...(11次)",
+    "原溯...(4次)",
+    "“不...(3次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 1,
+  "ai_marker_count": 0,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 3,
+  "chapter": 25,
+  "file": "第25章.txt"
+}

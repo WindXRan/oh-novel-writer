@@ -1,0 +1,32 @@
+{
+  "total_chars": 1961,
+  "total_sentences": 89,
+  "avg_sentence_len": 20.7,
+  "sentence_len_std": 14.9,
+  "avg_paragraph_len": 25,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 70
+  },
+  "single_para_ratio": 93.6,
+  "dialogue_ratio": 23.2,
+  "short_ratio": 49.4,
+  "long_ratio": 29.2,
+  "vocabulary_diversity": 0.304,
+  "top_patterns": [
+    "蒲雨...(9次)",
+    "陆蓁...(9次)",
+    "原溯...(6次)",
+    "“你...(3次)",
+    "“阿...(3次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(8处)"
+  ],
+  "simile_count": 15,
+  "ai_marker_count": 1,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 17,
+  "chapter": 38,
+  "file": "第38章.txt"
+}

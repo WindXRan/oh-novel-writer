@@ -1,0 +1,29 @@
+{
+  "total_chars": 2065,
+  "total_sentences": 93,
+  "avg_sentence_len": 21.0,
+  "sentence_len_std": 15.2,
+  "avg_paragraph_len": 26,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 99
+  },
+  "single_para_ratio": 89.7,
+  "dialogue_ratio": 29.7,
+  "short_ratio": 43.0,
+  "long_ratio": 26.9,
+  "vocabulary_diversity": 0.322,
+  "top_patterns": [
+    "蒲雨...(9次)",
+    "原溯...(7次)",
+    "“我...(5次)",
+    "”许...(3次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 3,
+  "ai_marker_count": 0,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 7,
+  "chapter": 27,
+  "file": "第27章.txt"
+}

@@ -1,0 +1,27 @@
+{
+  "total_chars": 1801,
+  "total_sentences": 86,
+  "avg_sentence_len": 19.7,
+  "sentence_len_std": 15.9,
+  "avg_paragraph_len": 25,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 84
+  },
+  "single_para_ratio": 88.7,
+  "dialogue_ratio": 19.0,
+  "short_ratio": 47.7,
+  "long_ratio": 19.8,
+  "vocabulary_diversity": 0.34,
+  "top_patterns": [
+    "原溯...(7次)",
+    "聂阳...(6次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 2,
+  "ai_marker_count": 1,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 5,
+  "chapter": 129,
+  "file": "第129章.txt"
+}

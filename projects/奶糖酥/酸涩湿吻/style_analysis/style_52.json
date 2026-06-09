@@ -1,0 +1,30 @@
+{
+  "total_chars": 2089,
+  "total_sentences": 115,
+  "avg_sentence_len": 16.9,
+  "sentence_len_std": 12.4,
+  "avg_paragraph_len": 23,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 75
+  },
+  "single_para_ratio": 78.0,
+  "dialogue_ratio": 19.9,
+  "short_ratio": 53.9,
+  "long_ratio": 16.5,
+  "vocabulary_diversity": 0.283,
+  "top_patterns": [
+    "原溯...(17次)",
+    "蒲雨...(8次)",
+    "”蒲...(7次)",
+    "”原...(5次)",
+    "“那...(4次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 3,
+  "ai_marker_count": 2,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 8,
+  "chapter": 52,
+  "file": "第52章.txt"
+}

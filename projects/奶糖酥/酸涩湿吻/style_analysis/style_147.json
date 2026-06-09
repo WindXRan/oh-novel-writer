@@ -1,0 +1,32 @@
+{
+  "total_chars": 2206,
+  "total_sentences": 107,
+  "avg_sentence_len": 19.4,
+  "sentence_len_std": 15.3,
+  "avg_paragraph_len": 25,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 80
+  },
+  "single_para_ratio": 87.4,
+  "dialogue_ratio": 26.4,
+  "short_ratio": 54.2,
+  "long_ratio": 26.2,
+  "vocabulary_diversity": 0.283,
+  "top_patterns": [
+    "李素...(10次)",
+    "蒲雨...(10次)",
+    "原溯...(7次)",
+    "“那...(5次)",
+    "”蒲...(4次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(4处)"
+  ],
+  "simile_count": 7,
+  "ai_marker_count": 4,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 11,
+  "chapter": 147,
+  "file": "第147章.txt"
+}

@@ -1,0 +1,30 @@
+{
+  "total_chars": 1937,
+  "total_sentences": 91,
+  "avg_sentence_len": 20.1,
+  "sentence_len_std": 14.7,
+  "avg_paragraph_len": 25,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 84
+  },
+  "single_para_ratio": 89.5,
+  "dialogue_ratio": 18.3,
+  "short_ratio": 44.0,
+  "long_ratio": 22.0,
+  "vocabulary_diversity": 0.332,
+  "top_patterns": [
+    "蒲雨...(9次)",
+    "司机...(4次)",
+    "李素...(3次)"
+  ],
+  "rhetorical_features": [
+    "比喻(像/如/仿佛)(2处)"
+  ],
+  "simile_count": 4,
+  "ai_marker_count": 5,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 2,
+  "chapter": 131,
+  "file": "第131章.txt"
+}

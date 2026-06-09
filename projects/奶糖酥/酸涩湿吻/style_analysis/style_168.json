@@ -1,0 +1,24 @@
+{
+  "total_chars": 1854,
+  "total_sentences": 115,
+  "avg_sentence_len": 14.8,
+  "sentence_len_std": 9.3,
+  "avg_paragraph_len": 22,
+  "paragraph_len_range": {
+    "min": 6,
+    "max": 61
+  },
+  "single_para_ratio": 65.9,
+  "dialogue_ratio": 0.5,
+  "short_ratio": 65.2,
+  "long_ratio": 6.1,
+  "vocabulary_diversity": 0.266,
+  "top_patterns": [],
+  "rhetorical_features": [],
+  "simile_count": 0,
+  "ai_marker_count": 0,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 18,
+  "chapter": 168,
+  "file": "第168章.txt"
+}

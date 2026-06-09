@@ -1,0 +1,29 @@
+{
+  "total_chars": 2153,
+  "total_sentences": 86,
+  "avg_sentence_len": 23.7,
+  "sentence_len_std": 16.1,
+  "avg_paragraph_len": 29,
+  "paragraph_len_range": {
+    "min": 8,
+    "max": 86
+  },
+  "single_para_ratio": 83.6,
+  "dialogue_ratio": 41.2,
+  "short_ratio": 33.7,
+  "long_ratio": 27.9,
+  "vocabulary_diversity": 0.307,
+  "top_patterns": [
+    "蒲雨...(12次)",
+    "李素...(6次)",
+    "程司...(5次)",
+    "”蒲...(4次)"
+  ],
+  "rhetorical_features": [],
+  "simile_count": 3,
+  "ai_marker_count": 1,
+  "direct_emotion_count": 0,
+  "ellipsis_count": 4,
+  "chapter": 8,
+  "file": "第8章.txt"
+}
