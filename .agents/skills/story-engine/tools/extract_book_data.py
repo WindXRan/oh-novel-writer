@@ -34,15 +34,18 @@ def extract_section(text, heading_pattern):
 
 
 def parse_book_info(text):
-    """解析 settings/book_info.md → book_info 对象。"""
+    """解析 settings/book_info.md → book_info 对象。
+    
+    产出 packages[] = [{title, blurb, cover_prompt, cover_image}, ...]，
+    每个 package 是一套完整上架配置（番茄要求书名+简介+封面组套）。
+    """
     data = {
         "name": "",
         "author": "",
         "source_book": "",
         "genre": "",
         "tags": [],
-        "blurbs": {},
-        "title_candidates": []
+        "packages": [],
     }
 
     name_match = re.search(r'^#\s+(.+)', text)
@@ -62,14 +65,35 @@ def parse_book_info(text):
         elif '标签' in key:
             data["tags"] = [t.strip() for t in val.replace('、', ',').split(',') if t.strip()]
 
-    # 简介：### 版本X 下面的内容（直到下一个 ### 或 ##）
+    # 简介：### 版本X 下面的内容
     blurb_sections = re.findall(r'###\s*(版本\S*)\s*\n(.*?)(?=\n###|\n##|\Z)', text, re.DOTALL)
+    blurbs = []
     for label, content in blurb_sections:
-        data["blurbs"][label.strip()] = content.strip()
+        blurbs.append(content.strip())
 
-    # 书名候选：列表项（排除键值对）
+    # 书名候选：列表项
     titles = re.findall(r'^\s*[-*]\s*《(.+?)》', text, re.MULTILINE)
-    data["title_candidates"] = titles
+
+    # 按位置配组：第N个书名 ↔ 第N个简介
+    # 番茄要求书名和简介是一套，所以按序配对
+    count = max(len(titles), len(blurbs))
+    for i in range(count):
+        pkg = {
+            "title": titles[i] if i < len(titles) else "",
+            "blurb": blurbs[i] if i < len(blurbs) else "",
+            "cover_prompt": "",
+            "cover_image": None,
+        }
+        # 只保留非空 package
+        if pkg["title"] or pkg["blurb"]:
+            data["packages"].append(pkg)
+
+    # fallback: 如果书名和简介都为空但书名候选存在
+    if not data["packages"] and titles:
+        for t in titles:
+            data["packages"].append({
+                "title": t, "blurb": "", "cover_prompt": "", "cover_image": None
+            })
 
     return data
 
