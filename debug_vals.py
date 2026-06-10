@@ -11,65 +11,56 @@ for ctx in browser.contexts:
             pg.evaluate("window.scrollTo(0, 0)")
             time.sleep(1)
             
-            # 强制显示所有popper
-            pg.evaluate("""() => {
-                document.querySelectorAll('.el-popper, .el-select-dropdown, .el-select__popper').forEach(el => {
-                    el.style.display = 'block';
-                    el.style.visibility = 'visible';
-                    el.style.opacity = '1';
-                    el.style.width = '200px';
-                    el.style.height = 'auto';
-                    el.style.minHeight = '50px';
-                    el.style.position = 'fixed';
-                    el.style.top = '200px';
-                    el.style.left = '400px';
-                    el.style.zIndex = '99999';
-                    el.style.background = '#fff';
-                    el.style.border = '1px solid #ccc';
-                    el.style.pointerEvents = 'auto';
-                });
-                document.querySelectorAll('.el-select-dropdown__item').forEach(el => {
-                    el.style.display = 'block';
-                    el.style.width = '100%';
-                    el.style.height = 'auto';
-                    el.style.padding = '8px 12px';
-                    el.style.cursor = 'pointer';
-                });
-            }""")
-            time.sleep(1)
-            
-            # 点击女频并触发事件
+            # 先检查"言情"标签的父元素结构
             result = pg.evaluate("""() => {
-                let items = document.querySelectorAll('.el-select-dropdown__item');
-                for (let item of items) {
-                    if (item.innerText.trim() === '女频') {
-                        // 触发各种事件
-                        item.dispatchEvent(new MouseEvent('mouseenter', {bubbles:true}));
-                        item.dispatchEvent(new MouseEvent('mouseover', {bubbles:true}));
-                        item.dispatchEvent(new MouseEvent('mousedown', {bubbles:true}));
-                        item.dispatchEvent(new MouseEvent('mouseup', {bubbles:true}));
-                        item.dispatchEvent(new MouseEvent('click', {bubbles:true}));
-                        return 'clicked with events';
+                let r = [];
+                document.querySelectorAll('div, span').forEach(el => {
+                    if (el.innerText.trim() === '言情' && el.children.length === 0 && el.offsetHeight > 0) {
+                        let parent = el.parentElement;
+                        let grandparent = parent ? parent.parentElement : null;
+                        r.push({
+                            el_cls: el.className,
+                            parent_cls: parent ? parent.className.substring(0, 80) : '',
+                            parent_tag: parent ? parent.tagName : '',
+                            grandparent_cls: grandparent ? grandparent.className.substring(0, 80) : '',
+                            el_style: el.getAttribute('style') || '',
+                            parent_style: parent ? (parent.getAttribute('style') || '') : ''
+                        });
                     }
-                }
-                return 'not found';
+                });
+                return r;
             }""")
+            print("言情标签结构:", flush=True)
+            for r in result:
+                print(f"  el: {r['el_cls']}", flush=True)
+                print(f"  parent: {r['parent_tag']} {r['parent_cls']}", flush=True)
+                print(f"  grandparent: {r['grandparent_cls']}", flush=True)
+            
+            # 点击言情标签
+            print("\\n点击言情...", flush=True)
+            pg.get_by_text('言情', exact=True).first.click(timeout=5000)
             time.sleep(1)
-            print(result, flush=True)
             
-            # 检查值
-            val = pg.evaluate("document.querySelectorAll('.el-select')[0].querySelector('input').value")
-            print(f"频道值: [{val}]", flush=True)
-            
-            # 也检查input的dispatchEvent
-            pg.evaluate("""() => {
-                let inp = document.querySelectorAll('.el-select')[0].querySelector('input');
-                inp.dispatchEvent(new Event('input', {bubbles:true}));
-                inp.dispatchEvent(new Event('change', {bubbles:true}));
+            # 检查点击后的状态
+            result2 = pg.evaluate("""() => {
+                let r = [];
+                document.querySelectorAll('div, span').forEach(el => {
+                    if (el.innerText.trim() === '言情' && el.children.length === 0 && el.offsetHeight > 0) {
+                        r.push({
+                            el_cls: el.className,
+                            el_style: el.getAttribute('style') || '',
+                            bg: window.getComputedStyle(el).backgroundColor,
+                            parent_cls: el.parentElement ? el.parentElement.className.substring(0, 80) : ''
+                        });
+                    }
+                });
+                return r;
             }""")
-            time.sleep(0.5)
-            val = pg.evaluate("document.querySelectorAll('.el-select')[0].querySelector('input').value")
-            print(f"频道值after event: [{val}]", flush=True)
+            print("\\n点击后:", flush=True)
+            for r in result2:
+                print(f"  bg: {r['bg']}", flush=True)
+                print(f"  cls: {r['el_cls']}", flush=True)
+                print(f"  parent: {r['parent_cls']}", flush=True)
             
             break
 p.stop()
