@@ -6,8 +6,8 @@ import os, re, sys, time, argparse, subprocess, socket
 from pathlib import Path
 
 DEFAULT_PEN_NAME = "一盏清酒"
-QUARK_EXE = r"C:\Users\Administrator\AppData\Local\Programs\Quark\quark.exe"
-QUARK_USER_DATA = r"C:\Users\Administrator\AppData\Local\Quark\User Data"
+QUARK_EXE = r"C:\Users\裴浩然\AppData\Local\Programs\Quark\quark.exe"
+QUARK_USER_DATA = r"C:\Users\裴浩然\AppData\Local\Quark\User Data"
 CDP_PORT = 9222
 
 
@@ -262,6 +262,13 @@ def submit_to_wawawriter(txt_path, headless=False, dry_run=False):
             time.sleep(5)
         else:
             print("已登录", flush=True)
+
+        # 如果被重定向到首页，重新导航到投稿页
+        if "/submission" not in page.url:
+            print("导航到投稿页...", flush=True)
+            page.goto("https://wawawriter.com/app/submission/create", timeout=30000)
+            time.sleep(5)
+            print(f"URL={page.url}", flush=True)
 
         print("[1] 上传文件...", flush=True)
         try:
