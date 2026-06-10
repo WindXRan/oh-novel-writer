@@ -460,23 +460,22 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
         else:
             replacements["源文指标"] = "（提取失败，请手动统计）"
 
-    # plot-guide和write-chapter注入角色名（从concept.md提取）
+    # plot-guide和write-chapter注入角色名（从settings/characters.md提取）
     if prompt_type in ("plot-guide", "write-chapter") and chapter_num:
-        concept_path = Path(config["rewrites_dir"]) / "concept.md"
-        if concept_path.exists():
-            import re as re_concept
-            concept_text = concept_path.read_text(encoding='utf-8')
-            # 提取角色设定部分
-            m = re_concept.search(r'## 角色设定.*?(?=##|\Z)', concept_text, re_concept.DOTALL)
-            if m:
-                role_block = m.group()
-                # 提取女主、男主、配角名
-                female = re_concept.search(r'女主\*\*：(\S+?)[，,]', role_block)
-                male = re_concept.search(r'男主\*\*：(\S+?)[，,]', role_block)
-                if female:
-                    replacements["女主名"] = female.group(1)
-                if male:
-                    replacements["男主名"] = male.group(1)
+        import re as re_char
+        char_path = Path(config["rewrites_dir"]) / "settings" / "characters.md"
+        # fallback: concept.md
+        if not char_path.exists():
+            char_path = Path(config["rewrites_dir"]) / "concept.md"
+        if char_path.exists():
+            char_text = char_path.read_text(encoding='utf-8')
+            # settings/characters.md 格式: "### 男主角：陆昭白" 或 "**男主**：陆昭白"
+            male = re_char.search(r'(?:男主角|男主)\s*[：:]\s*(\S+?)[\s）\)]', char_text)
+            female = re_char.search(r'(?:女主角|女主)\s*[：:]\s*(\S+?)[\s）\)]', char_text)
+            if male:
+                replacements["男主名"] = male.group(1)
+            if female:
+                replacements["女主名"] = female.group(1)
 
     max_tokens = 8192  # 不限制，靠重跑兜底
 
