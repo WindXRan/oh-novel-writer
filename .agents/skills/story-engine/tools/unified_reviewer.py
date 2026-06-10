@@ -52,6 +52,9 @@ ISSUE_TYPES = {
     "character": "人设问题",
     "rhythm": "节奏问题",
     "continuity": "连贯性问题",
+    "timeline": "时间线矛盾",
+    "economy": "经济状态矛盾",
+    "plot_thread": "悬疑线断裂",
 }
 
 SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
@@ -205,6 +208,9 @@ LLM_REVIEW_PROMPT = """你是资深女频网文编辑。请对以下章节进行
 2. 情绪浓度：是否有起伏，不能太平淡
 3. 人设一致性：角色行为是否符合设定
 4. 节奏感：是否有张有弛
+5. 时间线检查：这批章节中，时间描述是否前后矛盾？（如"三天后"变"一个月后"无交代）
+6. 经济状态检查：这批章节中，金额数字是否前后一致？（如"负债四百万"变"负债三百万"）
+7. 悬疑线检查：这批章节中，引入的悬念是否有回收？是否有断裂？
 
 【输出格式】
 严格按JSON格式输出，不要加其他文字：
@@ -212,8 +218,17 @@ LLM_REVIEW_PROMPT = """你是资深女频网文编辑。请对以下章节进行
   "chapters": {{
     "1": {{"score": 75, "issues": [{{"type": "hook", "severity": "high", "description": "...", "fix_instruction": "..."}}]}},
     "2": {{"score": 80, "issues": []}}
-  }}
+  }},
+  "batch_issues": [
+    {{"type": "timeline", "severity": "high", "description": "...", "fix_instruction": "..."}},
+    {{"type": "economy", "severity": "medium", "description": "...", "fix_instruction": "..."}},
+    {{"type": "plot_thread", "severity": "medium", "description": "...", "fix_instruction": "..."}}
+  ]
 }}
+
+注意：
+- batch_issues 是跨章节的问题，比如时间线矛盾、经济状态矛盾、悬疑线断裂
+- 如果没有跨章节问题，batch_issues 为空数组
 
 【章节内容】
 {chapters_text}
@@ -222,7 +237,7 @@ LLM_REVIEW_PROMPT = """你是资深女频网文编辑。请对以下章节进行
 
 
 def review_batch_llm(api_key, api_url, model, chapters_data):
-    """LLM 批量审核多章，返回 {ch: (issues, score)}。"""
+    """LLM 批量审核多章，返回 {ch: (issues, score)}, batch_issues。"""
     import requests
 
     # 拼接章节文本（不截断）
@@ -269,10 +284,22 @@ def review_batch_llm(api_key, api_url, model, chapters_data):
                             auto_fixable=False,
                         ))
                     out[ch_num] = (issues, ch_data.get("score", 0))
-                return out
+                
+                # 处理 batch_issues（跨章节问题）
+                batch_issues = []
+                for item in result.get("batch_issues", []):
+                    batch_issues.append(make_issue(
+                        item.get("type", "unknown"),
+                        item.get("severity", "medium"),
+                        item.get("description", ""),
+                        item.get("fix_instruction", ""),
+                        auto_fixable=False,
+                    ))
+                
+                return out, batch_issues
     except Exception as e:
         print(f"  [WARN] LLM批量审稿失败: {e}")
-    return {}
+    return {}, []
 
 
 # ============================================================
@@ -355,12 +382,19 @@ def review_all(config, start, end, get_source_text_fn, api_key=None, api_url=Non
             print(f"    批次 {batch_num}: ch{batch_nums[0]:03d}-{batch_nums[-1]:03d}")
             return review_batch_llm(api_key, api_url, model, batch)
 
+        # 收集所有 batch_issues
+        all_batch_issues = []
+
         with ThreadPoolExecutor(max_workers=workers) as ex:
             futures = {ex.submit(process_batch, b): b[0] for b in batches}
             for f in as_completed(futures):
                 batch_num = futures[f]
                 try:
-                    llm_results = f.result()
+                    llm_results, batch_issues = f.result()
+                    
+                    # 处理 batch_issues
+                    all_batch_issues.extend(batch_issues)
+                    
                     for ch_num, (llm_issues, llm_score) in llm_results.items():
                         if ch_num in results:
                             results[ch_num]["issues"].extend(llm_issues)
@@ -372,6 +406,13 @@ def review_all(config, start, end, get_source_text_fn, api_key=None, api_url=Non
                             results[ch_num]["status"] = "FAIL" if high_count > 0 or results[ch_num]["score"] < 60 else "PASS"
                 except Exception as e:
                     print(f"    [FAIL] 批次 {batch_num}: {e}")
+        
+        # 将 batch_issues 分配到第一个章节（用于报告）
+        if all_batch_issues and results:
+            first_ch = min(results.keys())
+            results[first_ch]["issues"].extend(all_batch_issues)
+            print(f"  发现 {len(all_batch_issues)} 个跨章节问题")
+        
         print(f"  LLM 审稿完成")
     elif llm:
         print(f"  [SKIP] 未配置 API_KEY，跳过 LLM 审稿")

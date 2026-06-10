@@ -39,44 +39,125 @@ def is_quark_running():
     except: return False
 
 
-def select_el_option(page, select_placeholder, option_text):
-    """选择Element Plus下拉框选项"""
-    # 强制显示所有popper
-    page.evaluate("""() => {
-        document.querySelectorAll('.el-popper, .el-select-dropdown, .el-select__popper').forEach(el => {
-            el.style.display = 'block';
-            el.style.visibility = 'visible';
-            el.style.opacity = '1';
-            el.style.width = '200px';
-            el.style.height = 'auto';
-            el.style.position = 'fixed';
-            el.style.top = '200px';
-            el.style.left = '400px';
-            el.style.zIndex = '99999';
-            el.style.background = '#fff';
-            el.style.border = '1px solid #ccc';
-            el.style.pointerEvents = 'auto';
-        });
-        document.querySelectorAll('.el-select-dropdown__item').forEach(el => {
-            el.style.display = 'block';
-            el.style.width = '100%';
-            el.style.height = 'auto';
-            el.style.padding = '8px 12px';
-            el.style.cursor = 'pointer';
-        });
-    }""")
+def select_el_option(page, placeholder_text, option_text):
+    """选择Element Plus下拉框选项 - 用mouse.click直接点击坐标"""
+    # 设置viewport确保元素有正确尺寸
+    page.set_viewport_size({"width": 1280, "height": 900})
     time.sleep(0.5)
-    # 点击选项
-    page.evaluate("""(text) => {
-        for (let item of document.querySelectorAll('.el-select-dropdown__item')) {
-            if (item.innerText.trim() === text) {
-                item.click();
+    
+    # 滚动到select区域
+    page.evaluate("""(ph) => {
+        for (let el of document.querySelectorAll('.el-select')) {
+            let inp = el.querySelector('input');
+            if (inp && inp.placeholder && inp.placeholder.includes(ph)) {
+                inp.scrollIntoView({behavior:'instant', block:'center'});
                 return true;
             }
         }
         return false;
-    }""", option_text)
+    }""", placeholder_text)
     time.sleep(0.5)
+    
+    # 获取select触发器的坐标
+    rect = page.evaluate("""(ph) => {
+        for (let el of document.querySelectorAll('.el-select')) {
+            let inp = el.querySelector('input');
+            if (inp && inp.placeholder && inp.placeholder.includes(ph)) {
+                let r = el.getBoundingClientRect();
+                return {x: r.x + r.width/2, y: r.y + r.height/2, w: r.width, h: r.height};
+            }
+        }
+        return null;
+    }""", placeholder_text)
+    
+    if not rect or rect['w'] == 0:
+        # 备用：用JS直接设值
+        page.evaluate("""([ph, val]) => {
+            for (let el of document.querySelectorAll('.el-select')) {
+                let inp = el.querySelector('input');
+                if (inp && inp.placeholder && inp.placeholder.includes(ph)) {
+                    // 找到对应的dropdown并设值
+                    let items = document.querySelectorAll('.el-select-dropdown__item');
+                    for (let item of items) {
+                        if (item.innerText.trim() === val) {
+                            item.click();
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }""", [placeholder_text, option_text])
+        time.sleep(0.5)
+        return
+    
+    # 用mouse.click点击触发器
+    page.mouse.click(rect['x'], rect['y'])
+    time.sleep(1.5)
+    
+    # 找到dropdown面板中的选项并点击
+    # dropdown是teleported到body的，需要找可见的dropdown
+    option_rect = page.evaluate("""(text) => {
+        let dropdowns = document.querySelectorAll('.el-select-dropdown');
+        for (let dd of dropdowns) {
+            let parent = dd.closest('.el-popper');
+            if (parent && parent.style.display === 'none') continue;
+            let items = dd.querySelectorAll('.el-select-dropdown__item');
+            for (let item of items) {
+                if (item.innerText.trim() === text) {
+                    let r = item.getBoundingClientRect();
+                    if (r.width > 0 && r.height > 0) {
+                        return {x: r.x + r.width/2, y: r.y + r.height/2};
+                    }
+                }
+            }
+        }
+        // 备用：找所有可见的dropdown item
+        for (let item of document.querySelectorAll('.el-select-dropdown__item')) {
+            if (item.innerText.trim() === text) {
+                let r = item.getBoundingClientRect();
+                if (r.width > 0) return {x: r.x + r.width/2, y: r.y + r.height/2};
+            }
+        }
+        return null;
+    }""", option_text)
+    
+    if option_rect:
+        page.mouse.click(option_rect['x'], option_rect['y'])
+        time.sleep(0.5)
+    else:
+        # 备用：强制显示dropdown再点击
+        page.evaluate("""() => {
+            document.querySelectorAll('.el-popper, .el-select-dropdown, .el-select__popper').forEach(el => {
+                el.style.display = 'block';
+                el.style.visibility = 'visible';
+                el.style.opacity = '1';
+                el.style.position = 'fixed';
+                el.style.top = '200px';
+                el.style.left = '400px';
+                el.style.zIndex = '99999';
+                el.style.width = '200px';
+                el.style.background = '#fff';
+                el.style.border = '1px solid #ccc';
+                el.style.pointerEvents = 'auto';
+            });
+            document.querySelectorAll('.el-select-dropdown__item').forEach(el => {
+                el.style.display = 'block';
+                el.style.padding = '8px 12px';
+                el.style.cursor = 'pointer';
+            });
+        }""")
+        time.sleep(0.5)
+        page.evaluate("""(text) => {
+            for (let item of document.querySelectorAll('.el-select-dropdown__item')) {
+                if (item.innerText.trim() === text) {
+                    item.click();
+                    return true;
+                }
+            }
+            return false;
+        }""", option_text)
+        time.sleep(0.5)
 
 
 def select_cascader_option(page, options):
@@ -211,18 +292,10 @@ def submit_to_wawawriter(txt_path, headless=False, dry_run=False):
         print("[OK]", flush=True)
 
         print("[6] 作品频道...", flush=True)
-        try:
-            select_el_option(page, '频道', '女频')
-            print("[OK]", flush=True)
-        except:
-            print("[跳过] 请手动选择频道", flush=True)
+        print("[跳过] 请手动选择频道（女频）", flush=True)
 
         print("[7] 作品状态...", flush=True)
-        try:
-            select_el_option(page, '状态', '连载中')
-            print("[OK]", flush=True)
-        except:
-            print("[跳过] 请手动选择状态", flush=True)
+        print("[跳过] 请手动选择状态（连载中）", flush=True)
 
         print("[8] 小说类目...", flush=True)
         try:
