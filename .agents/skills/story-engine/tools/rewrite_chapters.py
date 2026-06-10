@@ -913,7 +913,23 @@ def batch_run(config, prompt_type, start, end, workers, output_dir, filename_fmt
     # 损坏文件特征词（扩展列表）
     CORRUPT_MARKERS = ['抱歉', '无法读取', '无法生成', '对不起', '作为AI', '作为语言模型', '我无法']
 
+    # 写章前检查 plot_guide 是否存在且非空
+    if prompt_type == "write-chapter":
+        guides_dir = Path(config["rewrites_dir"]) / "guides"
+        empty_plots = set()
+        for ch in range(start, end + 1):
+            plot_file = guides_dir / f"plot_{ch}.md"
+            if not plot_file.exists() or plot_file.stat().st_size == 0:
+                empty_plots.add(ch)
+                print(f"  [SKIP] ch{ch}: plot_{ch}.md 不存在或为空，跳过写章")
+                if state_mgr:
+                    state_mgr.chapter_failed(ch, error=f"plot_{ch}.md 为空")
+    else:
+        empty_plots = set()
+
     for ch in range(start, end + 1):
+        if ch in empty_plots:
+            continue
         if skip_existing:
             filename = filename_fmt.format(ch=ch)
             filepath = Path(output_dir) / filename
