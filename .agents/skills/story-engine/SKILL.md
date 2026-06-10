@@ -59,20 +59,28 @@ projects/{作者名}/{源书名}/
 
 详见 `网文小说仿写教学.md`
 
-## Pipeline（4 阶段 + 自动导出）
+## Pipeline（编排器，委托各 skill 执行）
 
 ```
-Phase 1:   开书 (pro, 1 call)        → concept.md
-Phase 1.5: 风格分析 (脚本)            → style_analysis/style_{N}.json + style_{N}.md（模板）
-Phase 2:   Guides (flash, 2N 并行)   → plot_{N}.md + style_{N}.md（引用模板）
-Phase 3:   写章 (flash, N 并行)      → ch_{N}.txt（章名自生成）
-Phase 3.1: 质量验证                    → 字数/比喻/AI路标词/台词抄袭检测
-Phase 3.2: 后处理                      → 去#号/修标题/补省略号
-Phase 3.5: Trim (flash)              → 超字数 20% 的章自动精简
-Phase 3.6: 衔接修复 (flash, N-1 并行) → 修章间重叠
-Phase 4:   对比 (本地)                → compare/报告
-Phase 5:   自动导出                    → export/{书名}.txt（写章完成后自动执行）
+Phase 1:   开书 (pro, 1 call)        → concept.md                    [engine]
+Phase 1.5: 风格分析 (脚本)            → style_analysis/style_{N}.json [engine]
+Phase 2:   Guides (flash, 2N 并行)   → plot_{N}.md + style_{N}.md    [engine]
+Phase 3:   写章 (flash, N 并行)      → ch_{N}.txt                    [engine]
+Phase 3.1: 质量验证                    → 字数/比喻/AI路标词/台词抄袭检测 [engine]
+Phase 3.2: 后处理                      → 去#号/修标题/补省略号          [engine]
+Phase 3.5: Trim (flash)              → 超字数 20% 的章自动精简        [engine]
+Phase 3.6: 衔接修复 (flash, N-1 并行) → 修章间重叠                    [engine]
+Phase 4:   对比 (本地)                → compare/报告                  [story-compare]
+Phase 4.5: 审稿 (分批→汇总)          → 审稿报告 + 汇总报告            [story-review]
+Phase 5:   修复 (根据审稿)            → 修复后章节                     [story-review]
+Phase 6:   自动导出                    → export/{书名}.txt             [story-export]
 ```
+
+**engine 只做编排，具体逻辑归各 skill：**
+- `story-export`：导出为番茄格式txt
+- `story-review`：审稿（分批+汇总）、修复、审改闭环
+- `story-compare`：对比报告、抄袭风险分析
+- `story-optimize`：自动评分、规则沉淀
 
 ## 鲁棒性特性
 
@@ -129,13 +137,14 @@ python tools/rewrite_chapters.py --config configs/xxx.json --phase write,compare
 
 ## 配套 Skills
 
-| Skill | 用途 | 触发词 |
-|-------|------|--------|
-| `story-blurb` | 书名+简介生成 | 「写简介」「书名」 |
-| `story-cover` | 封面生成（默认输出prompt） | 「封面」「生成封面」 |
-| `story-compare` | 对比报告 | 「跑对比」「对比」 |
-| `story-style` | 源文风格分析 | 「分析风格」「提取风格」 |
-| `story-scan` | 番茄排行榜分析 | 「番茄扫描」「番茄数据」 |
+| Skill | 用途 | 触发词 | engine 委托 |
+|-------|------|--------|------------|
+| `story-review` | 审稿（分批+汇总）、修复、审改闭环 | 「审稿」「review」 | Phase 4.5/5 |
+| `story-compare` | 对比报告、抄袭风险分析 | 「跑对比」「对比」 | Phase 4 |
+| `story-optimize` | 自动评分、规则沉淀 | 「优化prompt」 | — |
+| `story-blurb` | 书名+简介生成 | 「写简介」「书名」 | — |
+| `story-cover` | 封面生成（默认输出prompt） | 「封面」「生成封面」 | — |
+| `story-scan` | 番茄排行榜分析 | 「番茄扫描」「番茄数据」 | — |
 
 ## 对比
 

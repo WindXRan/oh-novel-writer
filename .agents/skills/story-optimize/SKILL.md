@@ -11,6 +11,19 @@ shell: powershell
 
 > 把审稿反馈变成通用规则，加到prompt里，让每次生成都更好。
 
+## 工具
+
+| 脚本 | 用途 |
+|------|------|
+| `tools/auto_optimize.py` | 自动迭代优化：对比→评分→分析问题→优化prompt→重跑 |
+
+### CLI 用法
+
+```bash
+# 自动评分 + 优化建议
+python .agents/skills/story-optimize/tools/auto_optimize.py --config configs/xxx.json --start 1 --end 10
+```
+
 ## 流程
 
 ```

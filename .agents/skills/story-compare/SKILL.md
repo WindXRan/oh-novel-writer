@@ -14,6 +14,27 @@ trigger:
 
 通过脚本生成 `{书名}/对比/对比_{start}-{end}.md`，无 AI 参与，纯数据对比 + 全文对照。
 
+## 工具
+
+| 脚本 | 用途 |
+|------|------|
+| `compare.py` | 逐章对比（字数/全文对照） |
+| `local_compare.py` | 本地对比报告（脚本定量 + LLM定性） |
+| `tools/auto_compare.py` | API 抄袭风险分析（调 LLM 评估） |
+
+### CLI 用法
+
+```bash
+# 逐章对比（纯本地，无 AI）
+python .agents/skills/story-compare/compare.py "{书名}" 1 10 [--source {作者名}/{源书名}]
+
+# 本地对比报告（脚本定量 + LLM定性）
+python .agents/skills/story-compare/local_compare.py --config configs/xxx.json --start 1 --end 10
+
+# 抄袭风险分析（调 API）
+python .agents/skills/story-compare/tools/auto_compare.py --config configs/xxx.json --start 1 --end 10
+```
+
 ## 用法
 
 ```

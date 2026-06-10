@@ -22,6 +22,48 @@ shell: powershell
 5. 万能公式 — 可组合的模块化审稿
 6. **衔接性审稿** — 专项检查章间衔接、情节因果、人物状态、时间线、设定一致性
 
+## 工具
+
+本 skill 自带以下脚本，负责长篇审稿的批处理、汇总和修复：
+
+| 脚本 | 用途 |
+|------|------|
+| `tools/full_review.py` | 分批审稿 + 汇总合并（长篇核心策略） |
+| `tools/full_fix.py` | 根据审稿报告并行修复章节 |
+| `tools/novel_review_rewrite.py` | 审稿→DAG规划→波次修复→验证闭环 |
+
+### 长篇审稿策略
+
+长篇小说（>20章）审稿采用 **分批→汇总** 两阶段策略：
+
+```
+第一阶段：分批审稿（并行）
+  每 batch_size 章一批 → 独立审稿 → 输出「审稿_第N批_X-Y.md」
+
+第二阶段：汇总分析
+  所有批次结果 → 跨章系统性问题分析 → 输出「全文审稿汇总报告.md」
+  - 致命逻辑矛盾（人物生死/身份/时间线）
+  - 人设漂移
+  - 重复桥段
+  - 债务/数值矛盾
+
+第三阶段（可选）：修复
+  读取审稿报告 → 并行修复章节 → 字数控制±10%
+```
+
+### CLI 用法
+
+```bash
+# 分批审稿 + 汇总
+python .agents/skills/story-review/tools/full_review.py --config configs/xxx.json --start 1 --end 100 --batch-size 20
+
+# 根据审稿报告修复
+python .agents/skills/story-review/tools/full_fix.py --config configs/xxx.json --start 1 --end 100
+
+# 完整审改流程（审稿→DAG规划→波次修复→验证）
+python .agents/skills/story-review/tools/novel_review_rewrite.py --config configs/xxx.json --start 1 --end 100 --max-rounds 3
+```
+
 ## 使用方式
 
 ```
