@@ -225,11 +225,11 @@ def review_batch_llm(api_key, api_url, model, chapters_data, source_texts=None):
     """LLM 批量审核多章，返回 {ch: (issues, score)}。"""
     import requests
 
-    # 拼接章节文本（35章×2000字≈7万字，截断到5万字以内）
+    # 拼接章节文本（不截断，35章×2000字≈7万字在 context 内）
     parts = []
     for ch, ch_text in chapters_data:
-        parts.append(f"=== 第{ch}章 ===\n{ch_text[:2000]}")
-    chapters_text = "\n\n".join(parts)[:50000]
+        parts.append(f"=== 第{ch}章 ===\n{ch_text}")
+    chapters_text = "\n\n".join(parts)
 
     source_context = ""
     if source_texts:
