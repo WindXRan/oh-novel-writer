@@ -209,33 +209,40 @@ LLM_REVIEW_PROMPT = """你是资深女频网文编辑。请对以下章节进行
 【输出格式】
 严格按JSON格式输出，不要加其他文字：
 {{
-  "score": 75,
-  "issues": [
-    {{
-      "type": "hook|emotion|character|rhythm",
-      "severity": "high|medium|low",
-      "description": "问题描述",
-      "fix_instruction": "具体修改建议"
-    }}
-  ]
+  "chapters": {{
+    "1": {{"score": 75, "issues": [{{"type": "hook", "severity": "high", "description": "...", "fix_instruction": "..."}}]}},
+    "2": {{"score": 80, "issues": []}}
+  }}
 }}
 
 【章节内容】
-{chapter_content}
+{chapters_text}
 
 {source_context}"""
 
 
-def review_chapter_llm(api_key, api_url, model, ch, ch_text, source_text=None):
-    """LLM 审稿单章，返回 issue 列表。"""
+def review_batch_llm(api_key, api_url, model, chapters_data, source_texts=None):
+    """LLM 批量审核多章，返回 {ch: (issues, score)}。"""
     import requests
 
+    # 拼接章节文本
+    parts = []
+    for ch, ch_text in chapters_data:
+        parts.append(f"=== 第{ch}章 ===\n{ch_text[:3000]}")
+    chapters_text = "\n\n".join(parts)[:12000]
+
     source_context = ""
-    if source_text:
-        source_context = f"【源文（供参考风格，不要仿写内容）】\n{source_text[:2000]}"
+    if source_texts:
+        samples = []
+        for ch, src in source_texts.items():
+            if src:
+                samples.append(f"【第{ch}章源文】\n{src[:800]}")
+        source_context = "\n\n".join(samples)[:3000]
+        if source_context:
+            source_context = "【源文（供参考风格，不要仿写内容）】\n" + source_context
 
     prompt = LLM_REVIEW_PROMPT.format(
-        chapter_content=ch_text[:4000],
+        chapters_text=chapters_text,
         source_context=source_context,
     )
 
@@ -246,42 +253,44 @@ def review_chapter_llm(api_key, api_url, model, ch, ch_text, source_text=None):
             json={
                 "model": model,
                 "messages": [
-                    {"role": "system", "content": "你是专业网文编辑，输出严格JSON格式。"},
+                    {"role": "system", "content": "你是专业网文编辑，输出严格JSON。"},
                     {"role": "user", "content": prompt},
                 ],
                 "temperature": 0.3,
-                "max_tokens": 2000,
+                "max_tokens": 8000,
             },
-            timeout=60,
+            timeout=120,
         )
         if resp.status_code == 200:
             content = resp.json()["choices"][0]["message"]["content"]
-            # 提取 JSON（可能被 markdown 包裹）
             json_match = re.search(r'\{[\s\S]*\}', content)
             if json_match:
                 result = json.loads(json_match.group())
-                llm_issues = []
-                for item in result.get("issues", []):
-                    llm_issues.append(make_issue(
-                        item.get("type", "unknown"),
-                        item.get("severity", "medium"),
-                        item.get("description", ""),
-                        item.get("fix_instruction", ""),
-                        auto_fixable=False,
-                    ))
-                return llm_issues, result.get("score", 0)
+                out = {}
+                for ch_str, ch_data in result.get("chapters", {}).items():
+                    ch_num = int(ch_str)
+                    issues = []
+                    for item in ch_data.get("issues", []):
+                        issues.append(make_issue(
+                            item.get("type", "unknown"),
+                            item.get("severity", "medium"),
+                            item.get("description", ""),
+                            item.get("fix_instruction", ""),
+                            auto_fixable=False,
+                        ))
+                    out[ch_num] = (issues, ch_data.get("score", 0))
+                return out
     except Exception as e:
-        print(f"  [WARN] LLM审稿失败 ch{ch}: {e}")
-
-    return [], 0
+        print(f"  [WARN] LLM批量审稿失败: {e}")
+    return {}
 
 
 # ============================================================
 # 统一审查器
 # ============================================================
 
-def review_chapter(config, ch, get_source_text_fn, api_key=None, api_url=None, model=None, llm=False):
-    """统一审查单章，返回结构化结果。"""
+def review_chapter_algo(config, ch, get_source_text_fn):
+    """单章算法审查（不含 LLM）。"""
     chapters_dir = f"{config['rewrites_dir']}/chapters"
     ch_file = Path(chapters_dir) / f"ch_{ch:03d}.txt"
 
@@ -295,27 +304,12 @@ def review_chapter(config, ch, get_source_text_fn, api_key=None, api_url=None, m
         }
 
     ch_text = ch_file.read_text(encoding='utf-8')
-
-    # 量化检查
     issues, metrics = check_quantitative(config, ch, ch_text, get_source_text_fn)
-
-    # LLM 审稿（可选）
-    llm_score = 0
-    if llm and api_key:
-        src_text = get_source_text_fn(config, ch)
-        llm_issues, llm_score = review_chapter_llm(api_key, api_url, model, ch, ch_text, src_text)
-        issues.extend(llm_issues)
-
-    # 按严重程度排序
     issues.sort(key=lambda x: SEVERITY_ORDER.get(x["severity"], 9))
 
-    # 计算综合分
     high_count = sum(1 for i in issues if i["severity"] == "high")
     medium_count = sum(1 for i in issues if i["severity"] == "medium")
-    if llm_score > 0:
-        score = llm_score - high_count * 10 - medium_count * 3
-    else:
-        score = 100 - high_count * 15 - medium_count * 5
+    score = 100 - high_count * 15 - medium_count * 5
     score = max(0, min(100, score))
 
     return {
@@ -327,35 +321,63 @@ def review_chapter(config, ch, get_source_text_fn, api_key=None, api_url=None, m
     }
 
 
-def review_batch(config, chapters, get_source_text_fn, api_key=None, api_url=None, model=None, llm=False):
-    """批量审查章节。"""
-    results = {}
-    for ch in chapters:
-        results[ch] = review_chapter(config, ch, get_source_text_fn, api_key, api_url, model, llm)
-    return results
-
-
-def review_all(config, start, end, get_source_text_fn, api_key=None, api_url=None, model=None, llm=False, workers=1):
-    """审查所有章节，返回结构化报告。"""
+def review_all(config, start, end, get_source_text_fn, api_key=None, api_url=None, model=None, llm=False, workers=5, batch_size=10):
+    """审查所有章节：算法检查 + LLM 批量审稿。"""
     chapters = list(range(start, end + 1))
 
-    if workers > 1 and llm:
-        # 并行 LLM 审稿
-        results = {}
-        with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = {
-                executor.submit(review_chapter, config, ch, get_source_text_fn, api_key, api_url, model, llm): ch
-                for ch in chapters
-            }
-            for future in as_completed(futures):
-                ch = futures[future]
-                try:
-                    results[ch] = future.result()
-                except Exception as e:
-                    results[ch] = {"ch": ch, "status": "error", "score": 0, "metrics": {}, "issues": [make_issue("other", "high", str(e))]}
-        return results
-    else:
-        return review_batch(config, chapters, get_source_text_fn, api_key, api_url, model, llm)
+    # ========== Phase 1: 算法检查（并行） ==========
+    print(f"  算法检查 {len(chapters)} 章...")
+    results = {}
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futures = {ex.submit(review_chapter_algo, config, ch, get_source_text_fn): ch for ch in chapters}
+        for f in as_completed(futures):
+            ch = futures[f]
+            try:
+                results[ch] = f.result()
+            except Exception as e:
+                results[ch] = {"ch": ch, "status": "error", "score": 0, "metrics": {}, "issues": [make_issue("other", "high", str(e))]}
+
+    algo_pass = sum(1 for r in results.values() if r.get("status") == "PASS")
+    algo_fail = len(results) - algo_pass
+    print(f"  算法检查完成: {algo_pass}通过, {algo_fail}有问题")
+
+    # ========== Phase 2: LLM 批量审稿 ==========
+    if llm and api_key:
+        # 读取所有章节文本
+        chapters_dir = f"{config['rewrites_dir']}/chapters"
+        chapters_data = []
+        source_texts = {}
+        for ch in chapters:
+            ch_file = Path(chapters_dir) / f"ch_{ch:03d}.txt"
+            if ch_file.exists():
+                ch_text = ch_file.read_text(encoding='utf-8')
+                chapters_data.append((ch, ch_text))
+                src = get_source_text_fn(config, ch)
+                if src:
+                    source_texts[ch] = src
+
+        # 分批调用 LLM
+        print(f"  LLM 批量审稿 {len(chapters_data)} 章（{batch_size}章/批）...")
+        for i in range(0, len(chapters_data), batch_size):
+            batch = chapters_data[i:i+batch_size]
+            batch_nums = [c[0] for c in batch]
+            print(f"    批次 {i//batch_size+1}: ch{batch_nums[0]:03d}-{batch_nums[-1]:03d}")
+            llm_results = review_batch_llm(api_key, api_url, model, batch, source_texts)
+            for ch_num, (llm_issues, llm_score) in llm_results.items():
+                if ch_num in results:
+                    results[ch_num]["issues"].extend(llm_issues)
+                    # 重算分数
+                    all_issues = results[ch_num]["issues"]
+                    high_count = sum(1 for i2 in all_issues if i2["severity"] == "high")
+                    medium_count = sum(1 for i2 in all_issues if i2["severity"] == "medium")
+                    score = llm_score - high_count * 10 - medium_count * 3
+                    results[ch_num]["score"] = max(0, min(100, score))
+                    results[ch_num]["status"] = "FAIL" if high_count > 0 or results[ch_num]["score"] < 60 else "PASS"
+        print(f"  LLM 审稿完成")
+    elif llm:
+        print(f"  [SKIP] 未配置 API_KEY，跳过 LLM 审稿")
+
+    return results
 
 
 def save_report(results, output_path):
