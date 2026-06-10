@@ -120,8 +120,106 @@ def extract_metadata(filepath):
         return None
 
 
+def natural_sort_key(s):
+    """自然排序：第1章 < 第2章 < 第10章"""
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', str(s))]
+
+
+def scan_chapters(chapter_dir):
+    """扫描章节目录，返回章节列表"""
+    chapters = []
+    for f in sorted(chapter_dir.iterdir(), key=lambda x: natural_sort_key(x.name)):
+        if f.suffix == '.txt' and f.is_file():
+            chapters.append({
+                "name": f.stem,
+                "file": str(f).replace("\\", "/"),
+                "size": f.stat().st_size,
+            })
+    return chapters
+
+
+def scan_book_versions(book_dir, author):
+    """扫描一本书的所有版本（源文+仿写），同时检测封面"""
+    versions = []
+    cover_path = None
+
+    # 1. 源文缓存（单文件）
+    cache_dir = book_dir / "_cache"
+    if cache_dir.is_dir():
+        # 检测封面
+        for ext in ('.jpg', '.jpeg', '.png', '.webp'):
+            cover_file = cache_dir / f"cover{ext}"
+            if cover_file.is_file():
+                cover_path = str(cover_file).replace("\\", "/")
+                break
+
+        for f in cache_dir.glob("*.txt"):
+            if f.is_file() and f.stat().st_size > 100 and not f.name.startswith('_'):
+                versions.append({
+                    "type": "source",
+                    "name": "源文",
+                    "file": str(f).replace("\\", "/"),
+                })
+
+    # 2. 源文目录
+    source_dir = book_dir / "源文"
+    if source_dir.is_dir():
+        txt_files = list(source_dir.glob("*.txt"))
+        if txt_files:
+            chapters = scan_chapters(source_dir)
+            if chapters:
+                versions.append({
+                    "type": "source",
+                    "name": "源文",
+                    "chapters": chapters,
+                })
+
+    # 3. 仿写（旧格式）: 仿写/新书名/正文/
+    fw_dir = book_dir / "仿写"
+    if fw_dir.is_dir():
+        for sub in fw_dir.iterdir():
+            if sub.is_dir():
+                zhengwen = sub / "正文"
+                if zhengwen.is_dir():
+                    chapters = scan_chapters(zhengwen)
+                    if chapters:
+                        versions.append({
+                            "type": "rewrite",
+                            "name": sub.name,
+                            "chapters": chapters,
+                        })
+
+    # 4. 仿写（新格式）: rewrites/新书名/chapters/
+    rw_dir = book_dir / "rewrites"
+    if rw_dir.is_dir():
+        for sub in rw_dir.iterdir():
+            if sub.is_dir():
+                ch_dir = sub / "chapters"
+                if ch_dir.is_dir():
+                    chapters = scan_chapters(ch_dir)
+                    if chapters:
+                        versions.append({
+                            "type": "rewrite",
+                            "name": sub.name,
+                            "chapters": chapters,
+                        })
+
+    # 5. combined
+    combined_dir = book_dir / "combined"
+    if combined_dir.is_dir():
+        chapters = scan_chapters(combined_dir)
+        if chapters:
+            versions.append({
+                "type": "combined",
+                "name": "合并版",
+                "chapters": chapters,
+            })
+
+    return versions, cover_path
+
+
 def scan_library(projects_dir="projects"):
-    """扫描projects目录，生成书库索引"""
+    """扫描projects目录，生成书库索引（含仿写版本）"""
     projects_path = Path(projects_dir)
     if not projects_path.exists():
         print(f"目录不存在: {projects_dir}")
@@ -133,18 +231,51 @@ def scan_library(projects_dir="projects"):
     for author_dir in projects_path.iterdir():
         if not author_dir.is_dir():
             continue
-        
-        # 扫描该作者下的所有txt文件
-        for txt_file in author_dir.glob("*.txt"):
-            metadata = extract_metadata(txt_file)
-            if metadata:
-                if not metadata["author"]:
-                    metadata["author"] = author_dir.name
-                books.append(metadata)
-                print(f"  扫描: {metadata['author']}/{metadata['title']} ({metadata['char_count']}字)")
+        author = author_dir.name
+
+        for book_dir in sorted(author_dir.iterdir()):
+            if not book_dir.is_dir():
+                continue
+
+            # 跳过 combined 和非书目录
+            if book_dir.name in ('combined', '_cache', 'ai-detect报告', '风格', '蒸馏'):
+                continue
+
+            # 收集该书的所有版本
+            versions, cover_path = scan_book_versions(book_dir, author)
+            if not versions:
+                continue
+
+            # 取源文元数据
+            source_ver = next((v for v in versions if v["type"] == "source"), versions[0])
+            source_file = source_ver.get("file")
+            if source_file:
+                meta = extract_metadata(Path(source_file))
+            else:
+                # 多章源文，拼接读取
+                meta = {"title": book_dir.name, "author": author, "char_count": 0, "chapter_count": 0}
+                if source_ver.get("chapters"):
+                    meta["chapter_count"] = len(source_ver["chapters"])
+                    total_size = sum(c["size"] for c in source_ver["chapters"])
+                    meta["char_count"] = total_size // 3  # 粗估
+
+            if not meta:
+                continue
+
+            if not meta.get("author"):
+                meta["author"] = author
+
+            # 添加版本信息和封面
+            meta["versions"] = versions
+            meta["version_count"] = len(versions)
+            if cover_path:
+                meta["cover"] = cover_path
+
+            books.append(meta)
+            print(f"  {author}/{book_dir.name} ({meta.get('char_count', 0)}字, {len(versions)}个版本)")
     
     # 按字数排序
-    books.sort(key=lambda x: x["char_count"], reverse=True)
+    books.sort(key=lambda x: x.get("char_count", 0), reverse=True)
     
     return books
 

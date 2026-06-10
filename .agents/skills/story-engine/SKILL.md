@@ -62,6 +62,7 @@ projects/{作者名}/{源书名}/
 ## Pipeline（编排器，委托各 skill 执行）
 
 ```
+Phase 0:   导入 (story-import)        → _cache/chapters/ + _header.txt + _toc.txt
 Phase 1:   开书 (pro, 1 call)        → concept.md                    [engine]
 Phase 1.5: 风格分析 (脚本)            → style_analysis/style_{N}.json [engine]
 Phase 2:   Guides (flash, 2N 并行)   → plot_{N}.md + style_{N}.md    [engine]
@@ -100,6 +101,9 @@ Phase 6:   自动导出                    → export/{书名}.txt             [
 ## 使用
 
 ```bash
+# Phase 0: 导入源文
+python tools/story_import.py "projects/作者/书名/书名.txt"
+
 # 完整流水线
 python tools/rewrite_chapters.py --config configs/config_rewrite_10ch.json --start 1 --end 10 --workers 10
 
@@ -139,6 +143,7 @@ python tools/rewrite_chapters.py --config configs/xxx.json --phase write,compare
 
 | Skill | 用途 | 触发词 | engine 委托 |
 |-------|------|--------|------------|
+| `story-import` | 标准化导入（拆章+生成header/toc） | 「导入」「import」 | Phase 0 |
 | `story-review` | 审稿（分批+汇总）、修复、审改闭环 | 「审稿」「review」 | Phase 4.5/5 |
 | `story-compare` | 对比报告、抄袭风险分析 | 「跑对比」「对比」 | Phase 4 |
 | `story-optimize` | 自动评分、规则沉淀 | 「优化prompt」 | — |

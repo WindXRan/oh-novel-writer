@@ -1,0 +1,509 @@
+{
+  "version": 1,
+  "created": "2026-06-10T20:24:51",
+  "updated": "2026-06-10T20:26:48",
+  "phases": {
+    "open-book": {
+      "status": "done",
+      "started": "2026-06-10T20:24:51",
+      "finished": "2026-06-10T20:25:57"
+    },
+    "guides": {
+      "status": "running",
+      "started": "2026-06-10T20:26:08"
+    }
+  },
+  "chapters": {
+    "1": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:48",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "2": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:46",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "3": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:43",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "4": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:31",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "5": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:41",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "6": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:43",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "7": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:38",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "8": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:36",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "9": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:41",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "10": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:35",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "11": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:33",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "12": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:36",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "13": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:41",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "14": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:46",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "15": {
+      "status": "completed",
+      "timestamp": "2026-06-10T20:26:34",
+      "model": "deepseek-v4-flash",
+      "retries": 0
+    },
+    "16": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "17": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "18": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "19": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "20": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "21": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "22": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "23": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "24": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "25": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "26": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "27": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "28": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "29": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "30": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "31": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "32": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "33": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "34": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "35": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "36": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "37": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "38": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "39": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "40": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "41": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "42": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "43": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "44": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "45": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "46": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "47": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "48": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "49": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "50": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "51": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "52": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "53": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "54": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "55": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "56": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "57": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "58": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "59": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "60": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "61": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "62": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "63": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "64": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "65": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "66": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "67": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "68": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "69": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "70": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "71": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "72": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "73": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "74": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "75": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "76": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "77": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "78": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "79": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "80": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "81": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "82": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "83": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "84": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "85": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "86": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "87": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "88": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "89": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "90": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "91": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "92": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "93": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "94": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "95": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "96": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "97": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "98": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "99": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "100": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "101": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "102": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "103": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "104": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "105": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "106": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "107": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "108": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "109": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "110": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "111": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "112": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "113": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "114": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    },
+    "115": {
+      "status": "writing",
+      "timestamp": "2026-06-10T20:26:08"
+    }
+  },
+  "runs": []
+}
