@@ -311,7 +311,7 @@ def review_chapter_algo(config, ch, get_source_text_fn):
     }
 
 
-def review_all(config, start, end, get_source_text_fn, api_key=None, api_url=None, model=None, llm=False, workers=5, batch_size=15):
+def review_all(config, start, end, get_source_text_fn, api_key=None, api_url=None, model=None, llm=False, workers=10, batch_size=15):
     """审查所有章节：算法检查 + LLM 批量审稿。"""
     chapters = list(range(start, end + 1))
 
@@ -439,7 +439,7 @@ def main():
     parser.add_argument("--output", default=None, help="输出报告路径（默认 compare/unified_review.json）")
     parser.add_argument("--llm", action=argparse.BooleanOptionalAction, default=True, help="LLM审稿（默认开启，--no-llm 关闭）")
     parser.add_argument("--batch-size", type=int, default=35, help="LLM批量审稿每批章数（默认35）")
-    parser.add_argument("--workers", type=int, default=5, help="算法检查并行数")
+    parser.add_argument("--workers", type=int, default=10, help="并行数（默认10）")
     args = parser.parse_args()
 
     config_path = Path(args.config)
