@@ -221,29 +221,19 @@ LLM_REVIEW_PROMPT = """你是资深女频网文编辑。请对以下章节进行
 {source_context}"""
 
 
-def review_batch_llm(api_key, api_url, model, chapters_data, source_texts=None):
+def review_batch_llm(api_key, api_url, model, chapters_data):
     """LLM 批量审核多章，返回 {ch: (issues, score)}。"""
     import requests
 
-    # 拼接章节文本（不截断，35章×2000字≈7万字在 context 内）
+    # 拼接章节文本（不截断）
     parts = []
     for ch, ch_text in chapters_data:
         parts.append(f"=== 第{ch}章 ===\n{ch_text}")
     chapters_text = "\n\n".join(parts)
 
-    source_context = ""
-    if source_texts:
-        samples = []
-        for ch, src in source_texts.items():
-            if src:
-                samples.append(f"【第{ch}章源文】\n{src[:500]}")
-        source_context = "\n\n".join(samples)[:8000]
-        if source_context:
-            source_context = "【源文（供参考风格，不要仿写内容）】\n" + source_context
-
     prompt = LLM_REVIEW_PROMPT.format(
         chapters_text=chapters_text,
-        source_context=source_context,
+        source_context="",
     )
 
     try:
@@ -321,7 +311,7 @@ def review_chapter_algo(config, ch, get_source_text_fn):
     }
 
 
-def review_all(config, start, end, get_source_text_fn, api_key=None, api_url=None, model=None, llm=False, workers=5, batch_size=35):
+def review_all(config, start, end, get_source_text_fn, api_key=None, api_url=None, model=None, llm=False, workers=5, batch_size=15):
     """审查所有章节：算法检查 + LLM 批量审稿。"""
     chapters = list(range(start, end + 1))
 
@@ -346,15 +336,11 @@ def review_all(config, start, end, get_source_text_fn, api_key=None, api_url=Non
         # 读取所有章节文本
         chapters_dir = f"{config['rewrites_dir']}/chapters"
         chapters_data = []
-        source_texts = {}
         for ch in chapters:
             ch_file = Path(chapters_dir) / f"ch_{ch:03d}.txt"
             if ch_file.exists():
                 ch_text = ch_file.read_text(encoding='utf-8')
                 chapters_data.append((ch, ch_text))
-                src = get_source_text_fn(config, ch)
-                if src:
-                    source_texts[ch] = src
 
         # 分批调用 LLM
         print(f"  LLM 批量审稿 {len(chapters_data)} 章（{batch_size}章/批）...")
@@ -362,7 +348,7 @@ def review_all(config, start, end, get_source_text_fn, api_key=None, api_url=Non
             batch = chapters_data[i:i+batch_size]
             batch_nums = [c[0] for c in batch]
             print(f"    批次 {i//batch_size+1}: ch{batch_nums[0]:03d}-{batch_nums[-1]:03d}")
-            llm_results = review_batch_llm(api_key, api_url, model, batch, source_texts)
+            llm_results = review_batch_llm(api_key, api_url, model, batch)
             for ch_num, (llm_issues, llm_score) in llm_results.items():
                 if ch_num in results:
                     results[ch_num]["issues"].extend(llm_issues)
