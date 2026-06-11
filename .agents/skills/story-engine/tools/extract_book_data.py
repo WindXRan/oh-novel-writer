@@ -107,10 +107,18 @@ TAG_NORMALIZE = {
 def parse_characters(text):
     """解析 settings/characters.md → characters 数组。"""
     characters = []
-    entries = re.findall(r'###\s*(.+?)[：:]\s*(\S+)\s*\n(.*?)(?=\n###|\Z)', text, re.DOTALL)
+    
+    # 只匹配包含角色关键词的标题：女主、男主、配角、父亲、母亲、爷爷、奶奶等
+    role_pattern = r'##\s*(女[主二配]|男[主二配]|反派|重要配角|[^\n]{0,4}(?:父亲|母亲|爷爷|奶奶|祖父|祖母|外公|外婆|闺蜜|好友|助理|管家|继母|继父|弟弟|妹妹|哥哥|姐姐))[^\n]*?[：:]\s*([\u4e00-\u9fa5]{2,8})(?:[^\n]*?)\s*\n(.*?)(?=\n##|\Z)'
+    entries = re.findall(role_pattern, text, re.DOTALL)
+    
     for role_tag, name, body in entries:
         role_tag = role_tag.strip()
         name = name.strip()
+        
+        # 跳过表格行和非角色标题
+        if name.startswith('|') or name.startswith('-'):
+            continue
 
         char = {
             "tag": role_tag,
@@ -154,11 +162,50 @@ def parse_characters(text):
 
         characters.append(char)
 
-    if not characters:
-        table_rows = re.findall(r'\|\s*(\S+)\s*\|\s*(\S+)\s*\|', text)
-        for cells in table_rows:
-            if len(cells) >= 2:
-                characters.append({"tag": cells[0].strip(), "tag_short": cells[0].strip(), "name": cells[1].strip()})
+    # 解析表格格式的配角（## 重要配角 下面的表格）
+    side_char_section = re.search(r'##\s*重要配角\s*\n(.*?)(?=\n##|\Z)', text, re.DOTALL)
+    if side_char_section:
+        table_text = side_char_section.group(1)
+        # 解析表格行（跳过表头和分隔行）
+        for line in table_text.split('\n'):
+            line = line.strip()
+            if not line.startswith('|') or '---' in line or '角色' in line:
+                continue
+            cells = [c.strip() for c in line.split('|') if c.strip()]
+            if len(cells) >= 3:
+                name_cell = cells[0]
+                age_cell = cells[1]
+                relation_cell = cells[2]
+                personality_cell = cells[3] if len(cells) > 3 else ""
+                
+                # 提取名字：优先取括号内的名字，否则取第一个中文词
+                name_match = re.search(r'[（(]([\u4e00-\u9fa5]{2,8})[）)]', name_cell)
+                if name_match:
+                    name = name_match.group(1)
+                else:
+                    name_match = re.match(r'([\u4e00-\u9fa5]{2,8})', name_cell)
+                    if name_match:
+                        name = name_match.group(1)
+                    else:
+                        name = name_cell
+                
+                # 根据关系确定 tag
+                tag = relation_cell if relation_cell else name_cell
+                char = {
+                    "tag": tag,
+                    "tag_short": TAG_NORMALIZE.get(tag, tag),
+                    "name": name,
+                    "aliases": [],
+                    "age": age_cell,
+                    "identity": relation_cell,
+                    "personality": personality_cell,
+                    "arc": "",
+                    "weaknesses": [],
+                    "archetype": "",
+                    "first_appearance": 1,
+                    "frequency": ""
+                }
+                characters.append(char)
 
     return characters
 

@@ -6,6 +6,7 @@
 - Agent 模式：prompt 原样返回，Agent 自行 Read 文件
 - API 模式：自动解析 prompt 中的【标签】路径引用，将文件内容嵌入 prompt
 - book_data.json: 如果 rewrites_dir 中存在，自动从中提取 {变量} 用于替换
+- config/: 配置驱动，根据 channel/genre/pleasure 加载对应配置
 
 文件引用规范（prompt 中使用）：
   【标签】相对/路径/文件.md   →  输入文件（会被嵌入）
@@ -20,13 +21,16 @@ from pathlib import Path
 
 
 # 需要嵌入内容的标签（输入类），不包含的标签只保留路径引用
-EMBED_TAGS = {"源文", "弧线", "弧线参考", "设定", "新书设定", "风格数据", "plot_guide", "style_guide", "模板", "旧真相", "本章正文", "下章正文", "原文", "样板库"}
+EMBED_TAGS = {"源文", "弧线", "弧线参考", "设定", "新书设定", "风格数据", "plot_guide", "style_guide", "模板", "旧真相", "本章正文", "下章正文", "原文", "样板库", "热梗素材", "频道配置", "题材配置", "爽点配置"}
 
 # 不需要嵌入的标签（输出/指令类）
 PASS_THROUGH_TAGS = {"输出", "回传"}
 
 # 文件引用正则：【标签】路径（路径不含空格或含空格但合理）
 FILE_REF_PATTERN = re.compile(r'【(.+?)】(.+?\.(?:md|txt|json|ps1))', re.MULTILINE)
+
+# 配置目录（相对于 story-engine）
+CONFIG_DIR = "config"
 
 
 def resolve_path(base_dir, ref_path):
@@ -76,6 +80,45 @@ def load_book_data(rewrites_dir):
     except (json.JSONDecodeError, OSError) as e:
         print(f"  [WARN] book_data.json 读取失败: {e}")
         return None
+
+
+def load_channel_config(channel="female"):
+    """加载频道配置（女频/男频）。
+    
+    配置文件位置：.agents/skills/story-engine/config/channel/{channel}.json
+    """
+    base_dir = Path(__file__).parent.parent  # story-engine 目录
+    config_path = base_dir / "config" / "channel" / f"{channel}.json"
+    if not config_path.exists():
+        print(f"  [WARN] 频道配置不存在: {config_path}")
+        return {}
+    try:
+        return json.loads(config_path.read_text(encoding='utf-8'))
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"  [WARN] 频道配置读取失败: {e}")
+        return {}
+
+
+def make_channel_replacements(channel="female"):
+    """从频道配置构建 {变量} → 值 的替换映射。
+    
+    用于注入到 prompt 中，让 AI 知道当前频道的偏好。
+    """
+    config = load_channel_config(channel)
+    if not config:
+        return {}
+    
+    replacements = {}
+    replacements["channel"] = config.get("channel", "未知")
+    replacements["highlights"] = "、".join(config.get("highlights", []))
+    replacements["conflict_priorities"] = "、".join(config.get("conflict_priorities", []))
+    
+    # 节奏比例
+    rhythm = config.get("rhythm", {})
+    rhythm_parts = [f"{k}{v}%" for k, v in rhythm.items()]
+    replacements["rhythm"] = " / ".join(rhythm_parts)
+    
+    return replacements
 
 
 def make_book_data_replacements(book_data):
