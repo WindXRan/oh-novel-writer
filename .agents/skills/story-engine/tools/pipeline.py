@@ -13,7 +13,8 @@ from utils import get_chapters_list
 from phases import (
     phase_prep, phase_open_book,
     phase_guides,
-    phase_write, phase_validate,
+    phase_write, phase_write_agent,
+    phase_validate,
     phase_postfix, phase_trim, phase_rewrite, phase_polish, phase_expand,
     phase_compare,
     phase_unified_check, phase_unified_fix, phase_unified_review_fix,
@@ -84,7 +85,18 @@ def _print_report(t0, config):
     print(f"  耗时: {total:.0f}s")
 
 
-def _build_orch(config, state_mgr) -> Orchestrator:
+def _get_execution_mode(config, phase_name: str = "") -> str:
+    """获取执行模式：api | agent。
+
+    优先级：phase 级 > global > 默认 "api"
+    """
+    mode = config.get("execution_mode", "api")
+    if isinstance(mode, dict):
+        return mode.get(phase_name, mode.get("default", "api"))
+    return mode
+
+
+def _build_orch(config, state_mgr, config_path=None) -> Orchestrator:
     orch = Orchestrator(config, state_mgr)
 
     def _extract(cfg, s, e):
@@ -100,6 +112,16 @@ def _build_orch(config, state_mgr) -> Orchestrator:
         phase_write(cfg, s, e, cfg.get("workers", 30))
         phase_postfix(cfg, s, e)
 
+    def _write_handler_agent(cfg, s, e):
+        ok, fail = phase_write_agent(cfg, s, e, workers=cfg.get("workers", 10), state_mgr=state_mgr)
+        if ok:
+            rewrites_dir = cfg.get("rewrites_dir", "")
+            manifest_path = Path(rewrites_dir) / "_agent_tasks" / "write_manifest.json"
+            cfg_path = config_path or "configs/xxx.json"
+            print(f"\n  ⚠ Agent 写章任务已生成: {manifest_path}")
+            print(f"  请用 opencode agent 消费任务后，再运行 postfix:")
+            print(f"  python pipeline.py --config {cfg_path} --phase postfix")
+
     def _guide_handler(cfg, s, e):
         phase_guides(cfg, s, e, workers=1, state_mgr=state_mgr)
 
@@ -107,7 +129,12 @@ def _build_orch(config, state_mgr) -> Orchestrator:
     orch.register_handler("open_book", lambda cfg, s, e: phase_open_book(cfg, state_mgr=state_mgr))
     orch.register_handler("extract", _extract)
     orch.register_handler("guides", _guide_handler)
-    orch.register_handler("write", _write_handler)
+    # 根据 execution_mode 选择 write handler
+    if _get_execution_mode(config, "write") == "agent":
+        orch.register_handler("write", _write_handler_agent)
+        print(f"  [MODE] write → agent")
+    else:
+        orch.register_handler("write", _write_handler)
     orch.register_handler("validate", phase_validate)
     orch.register_handler("compare", phase_compare)
     orch.register_handler("trim", phase_trim)
@@ -181,13 +208,22 @@ def main():
     _run_detect_genre(config, config_path, args)
 
     goal = _expand(args.phase)
+
+    # 显示执行模式
+    exec_mode = _get_execution_mode(config)
+    mode_str = f"mode: {exec_mode}"
+    if isinstance(exec_mode, str):
+        phase_modes = [f"{p}={_get_execution_mode(config, p)}" for p in goal if _get_execution_mode(config, p) != exec_mode]
+        if phase_modes:
+            mode_str += f" ({', '.join(phase_modes)})"
+
     print(f"{'=' * 50}")
     print(f"{config['book_name']} | ch{args.start}-{args.end} | workers={args.workers}")
-    print(f"目的: {', '.join(sorted(goal))}")
+    print(f"目的: {', '.join(sorted(goal))} | {mode_str}")
     print(f"{'=' * 50}")
 
     t0 = time.time()
-    orch = _build_orch(config, state_mgr)
+    orch = _build_orch(config, state_mgr, config_path=args.config)
     results = orch.run(goal, args.start, args.end, args.workers)
 
     _post_process(config, goal)

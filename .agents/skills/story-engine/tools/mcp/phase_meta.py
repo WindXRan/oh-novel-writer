@@ -34,7 +34,7 @@ register(PhaseMeta("open_book", "开书：concept.md",
                    depends_on=["prep"], produces=["concept.md"],
                    scope="global", parallel=False, batchable=False))
 register(PhaseMeta("extract", "提取 book_data.json",
-                   depends_on=["prep"], produces=["book_data.json"],
+                   depends_on=["prep", "open_book"], produces=["book_data.json"],
                    scope="global", parallel=False, batchable=False))
 
 # ── 章级 phase（每章独立，可流水线并行） ──
