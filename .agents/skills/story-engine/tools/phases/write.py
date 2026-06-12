@@ -45,6 +45,8 @@ def phase_write(config, start, end, workers=10, state_mgr=None):
                 deviation = abs(chars - target) / target
                 if deviation > 0.3:
                     retry_list.append((ch, f"字数{chars}/{target}"))
+            elif chars < 500:
+                retry_list.append((ch, f"字数{chars}/0(源文缺失)"))
 
         if not retry_list:
             break

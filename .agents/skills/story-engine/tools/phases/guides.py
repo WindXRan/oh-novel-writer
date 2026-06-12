@@ -100,7 +100,7 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
     # 需要源文字数时，脚本计算（API 无法跑 PowerShell）
     if prompt_type in ("plot-guide", "write-chapter", "trim-chapter") and chapter_num:
         src_chars = count_source_chars(config, chapter_num)
-        target_chars = src_chars  # 1:1对标源文字数
+        target_chars = src_chars if src_chars > 0 else 1500  # 源文缺失则用默认值
         replacements["源文字数"] = str(src_chars)
         replacements["目标字数"] = str(target_chars)
         replacements["目标字数_min"] = str(int(target_chars * 0.9))
