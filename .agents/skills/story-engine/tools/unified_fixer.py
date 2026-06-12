@@ -375,13 +375,14 @@ def summary_agent(review_results: list[ReviewResult]) -> SummaryReport:
         all_cross.extend(rr.cross_issues)
 
     # 去重跨章问题 + 分级
+    _ISSUE_FIELDS = {"type", "severity", "priority", "desc", "fix", "auto_fixable", "ch"}
     seen_cross = set()
     cross_list = []
     for c in all_cross:
         key = c.get("desc", "")[:60]
         if key not in seen_cross:
             c["priority"] = severity_to_priority(c.get("severity", "medium"), c.get("type", "continuity"))
-            cross_list.append(Issue(**c))
+            cross_list.append(Issue(**{k: v for k, v in c.items() if k in _ISSUE_FIELDS}))
             seen_cross.add(key)
 
     # 排序 per chapter: P0 > P1 > P2
@@ -422,8 +423,9 @@ def dispatch_agent(config, report: SummaryReport) -> dict[int, FixTask]:
     for ch, data in report.chapters.items():
         if not data["issues"]:
             continue
-        mech = [Issue(**i) for i in data["issues"] if i.get("auto_fixable")]
-        llm_list = [Issue(**i) for i in data["issues"] if not i.get("auto_fixable")]
+        _ISSUE_FIELDS = {"type", "severity", "priority", "desc", "fix", "auto_fixable", "ch"}
+        mech = [Issue(**{k: v for k, v in i.items() if k in _ISSUE_FIELDS}) for i in data["issues"] if i.get("auto_fixable")]
+        llm_list = [Issue(**{k: v for k, v in i.items() if k in _ISSUE_FIELDS}) for i in data["issues"] if not i.get("auto_fixable")]
 
         needs_llm = bool(llm_list and any(
             i.get("priority") in ("P0", "P1") for i in data["issues"]
