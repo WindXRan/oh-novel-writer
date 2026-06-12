@@ -13,7 +13,8 @@ Agent 架构:
     python unified_fixer.py --config xxx.json --start 1 --end 188
 """
 
-import os, re, sys, json, time, argparse
+import os, re, sys, json, time, argparse, warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="requests")
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field, asdict
@@ -87,13 +88,15 @@ def issue_dict(i):
 # Prompt 见 prompts/unified-review.md，由 _llm_batch_review 加载
 
 
-def review_agent(config, chapter_batch, api_key, api_url, model):
+def review_agent(config, chapter_batch, api_key, api_url, model, agent_id=0):
     """单个审查 agent。在一批章节上运行 algo 检查 + LLM 批量审稿。
 
-    Input:  config, chapter_batch (list[int]), api_key, api_url, model
+    Input:  config, chapter_batch (list[int]), api_key, api_url, model, agent_id
     Output: ReviewResult
     """
     result = ReviewResult()
+    n = len(chapter_batch)
+    done_algo = 0
 
     # ---- 1a: 算法检查 (所有章并行) ----
     with ThreadPoolExecutor(max_workers=len(chapter_batch)) as ex:
@@ -104,10 +107,13 @@ def review_agent(config, chapter_batch, api_key, api_url, model):
                 result.chapters[ch] = f.result()
             except Exception as e:
                 result.chapters[ch] = {"score": 0, "issues": [{"type": "error", "severity": "high", "desc": str(e)}]}
+            done_algo += 1
+            print(f"    [审查#{agent_id}] 算法检查: {done_algo}/{n} 章 (第{ch}章)", flush=True)
 
     # ---- 1b: LLM 批量审稿 (有问题的章) ----
     problem_chs = [ch for ch, d in result.chapters.items() if d.get("issues")]
     if problem_chs and api_key:
+        print(f"    [审查#{agent_id}] LLM 审稿: {len(problem_chs)} 章...", flush=True)
         try:
             ch_data, cross = _llm_batch_review(config, problem_chs, api_key, api_url, model)
             for ch_str, data in ch_data.items():
@@ -123,8 +129,9 @@ def review_agent(config, chapter_batch, api_key, api_url, model):
                         data.get("score", 50)
                     )
             result.cross_issues.extend(cross)
+            print(f"    [审查#{agent_id}] LLM 审稿完成", flush=True)
         except Exception as e:
-            pass
+            print(f"    [审查#{agent_id}] LLM 审稿失败: {e}", flush=True)
 
     return result
 
@@ -510,6 +517,7 @@ def _fix_mechanical(text, issues):
 def _fix_llm(config, task, text, api_key, api_url, model):
     """LLM 修复。"""
     import requests
+    print(f"      [修复] 第{task.ch}章 LLM 修复中...", flush=True)
 
     prompt_template = load_prompt_str("unified-fix.md")
     if not prompt_template:
@@ -532,6 +540,10 @@ def _fix_llm(config, task, text, api_key, api_url, model):
             adj_parts.append(f"【{label}】\n{adj_t[-500:]}" if offset == -1 else f"【{label}】\n{adj_t[:500]}")
     adj = '\n\n'.join(adj_parts)
 
+    # 读脱敏版源文（防数据泄漏，保留结构参考即可）
+    from lib.source_stripper import strip_source_chapter
+    source_text = strip_source_chapter(config, task.ch) or get_source_text(config, task.ch) or "（无源文）"
+
     prompt = prompt_template.format(
         issues_text=issues_text,
         adjacent_context=adj,
@@ -540,6 +552,7 @@ def _fix_llm(config, task, text, api_key, api_url, model):
         min_chars=int((task.target_chars or len(re.sub(r'\s', '', text))) * 0.85),
         max_chars=int((task.target_chars or len(re.sub(r'\s', '', text))) * 1.15),
         chapter_content=text,
+        源文全文=source_text,
     )
 
     pc = get_prompt_config_with_overrides("unified-fix.md", config)
@@ -580,18 +593,19 @@ def run_pipeline(cfg, start, end, api_key=None, api_url=None, model=None,
     """
     chapters = list(range(start, end + 1))
     t_start = time.time()
-    print(f"  章节范围: ch{start}-{end} ({len(chapters)}章) | batch={batch_size} | workers={workers}")
+    print(f"  章节范围: ch{start}-{end} ({len(chapters)}章) | batch={batch_size} | workers={workers}", flush=True)
 
     # ========== Step 1: Scatter — Review Agents ==========
-    print(f"\n{'='*40}")
-    print(f"Step 1: 审查 Agent ({len(chapters)} 章, {batch_size} 章/agent)")
-    print("="*40)
+    print(f"\n{'='*40}", flush=True)
+    print(f"Step 1: 审查 Agent ({len(chapters)} 章, {batch_size} 章/agent)", flush=True)
+    print("="*40, flush=True)
 
     batches = [chapters[i:i+batch_size] for i in range(0, len(chapters), batch_size)]
     review_results = []
+    print(f"  {len(batches)} 个审查 agent 并行启动")
     with ThreadPoolExecutor(max_workers=min(workers, len(batches))) as ex:
         futures = {
-            ex.submit(review_agent, cfg, batch, api_key, api_url, model): i
+            ex.submit(review_agent, cfg, batch, api_key, api_url, model, agent_id=i): i
             for i, batch in enumerate(batches)
         }
         for f in as_completed(futures):
@@ -603,41 +617,80 @@ def run_pipeline(cfg, start, end, api_key=None, api_url=None, model=None,
     print(f"  {len(review_results)}/{len(batches)} 个审查 agent 完成")
 
     # ========== Step 2: Gather — Summary Agent ==========
-    print(f"\n{'='*40}")
-    print(f"Step 2: 总结 Agent")
-    print("="*40)
+    print(f"\n{'='*40}", flush=True)
+    print(f"Step 2: 总结 Agent", flush=True)
+    print("="*40, flush=True)
 
     summary = summary_agent(review_results)
     s = summary.stats
-    print(f"  {s['total_ch']} 章有问题 | P0:{s['p0']} P1:{s['p1']} P2:{s['p2']} | 均分:{s['avg_score']}")
+    print(f"  {s['total_ch']} 章有问题 | P0:{s['p0']} P1:{s['p1']} P2:{s['p2']} | 均分:{s['avg_score']}", flush=True)
 
     if summary.cross_issues:
-        print(f"  跨章问题: {len(summary.cross_issues)}")
+        print(f"  跨章问题: {len(summary.cross_issues)}", flush=True)
         for ci in summary.cross_issues:
-            print(f"    [{ci.priority}] {ci.desc}")
+            print(f"    [{ci.priority}] {ci.desc}", flush=True)
 
     if not summary.chapters:
-        print("  ✓ 无问题，无需修复")
+        print("  ✓ 无问题，无需修复", flush=True)
         return {}, {str(k): v for k, v in summary.chapters.items()}
 
     # ========== Step 3: Plan — Dispatch Agent ==========
-    print(f"\n{'='*40}")
-    print(f"Step 3: 派任务 Agent")
-    print("="*40)
+    print(f"\n{'='*40}", flush=True)
+    print(f"Step 3: 派任务 Agent", flush=True)
+    print("="*40, flush=True)
 
     tasks = dispatch_agent(cfg, summary, skip_llm=skip_llm_review)
     mech_total = sum(len(t.mechanical) for t in tasks.values())
     llm_total = sum(1 for t in tasks.values() if t.llm and not t.skip_llm)
-    print(f"  {len(tasks)} 章需修复 | 机械修复 {mech_total} 处 | LLM 修复 {llm_total} 章")
+    print(f"  {len(tasks)} 章需修复 | 机械修复 {mech_total} 处 | LLM 修复 {llm_total} 章", flush=True)
 
     if dry_run:
-        print(f"\n  [DRY-RUN] 不执行修复")
+        print(f"\n  [DRY-RUN] 不执行修复", flush=True)
         return tasks, {str(k): v for k, v in summary.chapters.items()}
 
+    # ========== 确认环节 ==========
+    print(f"\n{'='*50}", flush=True)
+    print(f"  修复计划预览", flush=True)
+    print("="*50, flush=True)
+    print(f"  需修复: {len(tasks)} / {len(chapters)} 章", flush=True)
+    print(f"  机械修复: {mech_total} 处 (AI痕迹词/路标词 — 自动删)", flush=True)
+    print(f"  LLM 修复: {llm_total} 章 (需模型改写)", flush=True)
+    print(f"  无问题跳过: {len(chapters) - len(tasks)} 章", flush=True)
+    if llm_total > 0:
+        print(f"  ⚠ LLM 修复会调用模型改写，消耗 tokens", flush=True)
+
+    # 按类型分组展示问题分布
+    type_count = {}
+    for ch, task in sorted(tasks.items()):
+        for iss in task.mechanical + task.llm:
+            t = iss.type
+            type_count.setdefault(t, {"count": 0, "chapters": []})
+            type_count[t]["count"] += 1
+            if ch not in type_count[t]["chapters"]:
+                type_count[t]["chapters"].append(ch)
+    if type_count:
+        print(f"\n  问题分布:")
+        order = {"plagiarism": "台词雷同", "word_count": "字数偏差", "character": "人设漂移",
+                 "hook": "钩子不足", "emotion": "直抒情过多", "metaphor": "比喻过多",
+                 "ai_marker": "AI路标词", "ai_trace": "AI痕迹词", "continuity": "连贯性",
+                 "rhythm": "节奏", "dialogue": "对话", "missing": "文件缺失"}
+        for t, info in sorted(type_count.items(), key=lambda x: -x[1]["count"]):
+            label = order.get(t, t)
+            ch_list = info["chapters"][:5]
+            more = f"...共{len(info['chapters'])}章" if len(info['chapters']) > 5 else ""
+            print(f"    {label}: {info['count']} 处 (第{','.join(map(str,ch_list))}章{more})", flush=True)
+
+    print(f"\n  按 Enter 开始修复，或 Ctrl+C 取消...", end="", flush=True)
+    try:
+        input()
+    except KeyboardInterrupt:
+        print(f"\n  已取消", flush=True)
+        return {}, {str(k): v for k, v in summary.chapters.items()}
+
     # ========== Step 4: Scatter — Fix Agents ==========
-    print(f"\n{'='*40}")
-    print(f"Step 4: 修复 Agent ({len(tasks)} 任务)")
-    print("="*40)
+    print(f"\n{'='*40}", flush=True)
+    print(f"Step 4: 修复 Agent ({len(tasks)} 任务)", flush=True)
+    print("="*40, flush=True)
 
     results = {}
     done = 0
@@ -654,9 +707,10 @@ def run_pipeline(cfg, start, end, api_key=None, api_url=None, model=None,
             except Exception as e:
                 results[ch] = FixResult(ch=ch, status="error", error=str(e))
             done += 1
-            if done % max(1, total // 10) == 0 or done == total:
-                fixed = sum(1 for r in results.values() if r.status == "fixed")
-                print(f"    [{done}/{total}] {time.time()-t_start:.0f}s | {fixed} 章已修复")
+            fixed = sum(1 for r in results.values() if r.status == "fixed")
+            status = results[ch].status
+            status_icon = {"fixed": "✓", "unchanged": "~", "missing": "✗", "error": "!"}.get(status, "?")
+            print(f"    [{done}/{total}] {status_icon} 第{ch}章 → {status} | {fixed} 章已修复 | {time.time()-t_start:.0f}s", flush=True)
 
     # ========== Step 5: Gather — 最终报告 ==========
     fixed = sum(1 for r in results.values() if r.status == "fixed")
@@ -666,12 +720,12 @@ def run_pipeline(cfg, start, end, api_key=None, api_url=None, model=None,
     llm_done = sum(1 for r in results.values() if r.llm_used)
     errors = sum(1 for r in results.values() if r.status == "error")
 
-    print(f"\n{'='*50}")
-    print(f"完成 | {time.time()-t_start:.0f}s")
-    print("="*50)
-    print(f"  P0:{s['p0']}  P1:{s['p1']}  P2:{s['p2']}")
-    print(f"  修复: {fixed} 章已修 / {unchanged} 章未变 / {missing} 缺失 / {errors} 错误")
-    print(f"  机械: {mech_done} 处 / LLM: {llm_done} 章")
+    print(f"\n{'='*50}", flush=True)
+    print(f"完成 | {time.time()-t_start:.0f}s", flush=True)
+    print("="*50, flush=True)
+    print(f"  P0:{s['p0']}  P1:{s['p1']}  P2:{s['p2']}", flush=True)
+    print(f"  修复: {fixed} 章已修 / {unchanged} 章未变 / {missing} 缺失 / {errors} 错误", flush=True)
+    print(f"  机械: {mech_done} 处 / LLM: {llm_done} 章", flush=True)
 
     return {str(k): asdict(v) for k, v in results.items()}, {str(k): v for k, v in summary.chapters.items()}
 

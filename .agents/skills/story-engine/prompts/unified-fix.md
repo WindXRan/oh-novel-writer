@@ -1,22 +1,21 @@
 ---
-version: 1
-changelog: 初始版本
+version: 4
+changelog: 换皮验证升级：跨类换 + 剥名测试
 type: user
 phase: unified
-description: 修复章节
-required_vars: ["issues_text", "adjacent_context", "orig_chars", "target_chars", "min_chars", "max_chars", "chapter_content"]
-defaults: {"model": "deepseek-v4-flash", "max_tokens": 8000, "reasoning_effort": "low", "temperature": 0.6}
+description: 修复章节（含抄袭修复）
+required_vars: ["issues_text", "adjacent_context", "orig_chars", "target_chars", "min_chars", "max_chars", "chapter_content", "源文全文"]
+defaults: {"model": "deepseek-v4-flash", "max_tokens": 8000, "reasoning_effort": "low", "temperature": 0.7}
 ---
-
 # 统一修复提示词
 
-你是资深网文写手。根据以下问题一次性修复章节。
+你是资深网文写手，擅长在保持情绪效果的前提下用全新事件替换抄袭内容。
 
 ## 需修复的问题
 
 {issues_text}
 
-## 相邻章节上下文
+## 相邻章节上下文（用于人设/剧情连贯性）
 
 {adjacent_context}
 
@@ -24,11 +23,35 @@ defaults: {"model": "deepseek-v4-flash", "max_tokens": 8000, "reasoning_effort":
 
 {chapter_content}
 
-## 要求
+## 参考：源文同一章（仅作情绪/结构对标，禁止照搬情节）
 
-1. 一次性修复所有问题，只改有问题的地方
-2. 字数：{min_chars}~{max_chars}字
-3. 禁止出现路标词：首先、其次、然后、最后、与此同时、值得注意的是、此外、综上所述
-4. 用动作细节代替直抒胸臆
-5. 台词口语化
-6. 直接输出完整章节，不要加任何分析或说明
+{源文全文}
+
+## 修复策略
+
+根据 issues 中的类型决定修复方式：
+
+### 如果包含 plagiarism（换皮/抄袭）
+不要微调，**整章重构**：
+1. 基于 {adjacent_context} 保持人设和剧情连贯
+2. 在保留相同情绪曲线（紧张→化解、冲突→高潮）的前提下，**换一套完全不同的事件来实现**
+3. 源文的冲突触发方式（如"在某处撞见某人说某话"）→ 换成完全不同的触发方式。**不能只是"撞见→遇到""酒吧→KTV"这类同级替换。要跨级换。**
+4. 源文的道具/装置（手机、U盘、对讲机、文件等）→ 全部换掉，且不能换同类品（手机→平板算同类，手机→笔记/当面质问才算换类）
+5. 源文的场景（酒吧、办公室、食堂等）→ 换不同场景类型（不是换名字）
+6. 源文的动作链（A→B→C）→ 换完全不同的事件链条
+7. **最终验证**：把修复后的章节中所有人名地名替换为【A】【B】，无法判断它对应源文哪一章。如果能判断→重做
+
+### 如果不是 plagiarism
+只改有问题的地方：
+1. 字数不足→扩写记忆点场景
+2. 字数超标→精简日常/过渡段落
+3. AI痕迹词→删掉句首路标词
+4. 直抒情→用动作细节代替
+5. 比喻过多→删到源文浓度以下
+
+## 通用要求
+
+1. 字数：{min_chars}~{max_chars}字
+2. 禁止出现路标词：首先、其次、然后、最后、与此同时、值得注意的是、此外、综上所述
+3. 台词口语化
+4. 直接输出完整章节，不要加任何分析或说明

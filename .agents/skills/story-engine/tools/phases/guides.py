@@ -106,14 +106,16 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
         replacements["目标字数_min"] = str(int(target_chars * 0.9))
         replacements["目标字数_max"] = str(int(target_chars * 1.1))
     
-    # plot-guide 和 write-chapter 直接注入源文全文（精度对标，抄袭由下游检测）
-    if prompt_type in ("plot-guide", "write-chapter") and chapter_num:
-        from utils import get_source_text
-        source_text = get_source_text(config, chapter_num)
-        if source_text:
-            replacements["源文全文"] = source_text
+    # plot-guide 注入脱敏版源文（防数据泄漏，但仍保留结构/节奏参考）
+    # write-chapter 不注入源文全文：writer 只通过 plot_guide 了解结构，防止按源文 paraphrase
+    if prompt_type == "plot-guide" and chapter_num:
+        from lib.source_stripper import strip_source_chapter
+        stripped = strip_source_chapter(config, chapter_num)
+        if stripped:
+            replacements["源文全文"] = stripped
         else:
-            replacements["源文全文"] = "（源文读取失败）"
+            source_text = get_source_text(config, chapter_num)
+            replacements["源文全文"] = source_text or "（源文读取失败）"
 
     # 写章时按目标字数动态设 max_tokens（够写完整不截断，超字数靠 trim 裁）
     if prompt_type == "write-chapter" and chapter_num:
