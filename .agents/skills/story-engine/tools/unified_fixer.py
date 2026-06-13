@@ -213,6 +213,24 @@ def _algo_check(config, ch):
                            "auto_fixable": False})
             score -= 15
 
+    # 代词密度（句首他/她比例）
+    lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 2]
+    if lines:
+        pronoun_start = sum(1 for l in lines if l.startswith('他') or l.startswith('她'))
+        pronoun_pct = pronoun_start / len(lines) * 100
+        if pronoun_pct > 15:
+            issues.append({"type": "pronoun", "severity": "high",
+                           "desc": f"句首代词{pronoun_pct:.0f}% ({pronoun_start}/{len(lines)})，上限15%",
+                           "fix": "用名字替代、省略主语、合并句子",
+                           "auto_fixable": False})
+            score -= 10
+        elif pronoun_pct > 10:
+            issues.append({"type": "pronoun", "severity": "medium",
+                           "desc": f"句首代词{pronoun_pct:.0f}% ({pronoun_start}/{len(lines)})，上限10%",
+                           "fix": "用名字替代、省略主语、合并句子",
+                           "auto_fixable": False})
+            score -= 5
+
     return {"score": max(0, score), "issues": issues, "metrics": metrics,
             "chars": metrics["chars"], "src_chars": src_chars}
 
@@ -309,10 +327,22 @@ def _llm_batch_review(config, chapter_nums, api_key, api_url, model):
             src_samples.append(f"--- 源文第{ch}章 ---\n{src[:1000]}")
     source_context = '\n\n'.join(src_samples)
 
+    # 加载角色设定和剧情设定（用于人设一致性检查）
+    rewrites_dir = config.get("rewrites_dir", "")
+    extra_context = ""
+    for fname in ["settings/characters.md", "settings/plot.md"]:
+        fpath = Path(rewrites_dir) / fname
+        if fpath.exists():
+            extra_context += f"\n\n=== {fname} ===\n{fpath.read_text(encoding='utf-8')[:1500]}"
+
+    # 将设定信息注入到 source_context 中
+    if extra_context:
+        source_context = extra_context + "\n\n" + source_context
+
     prompt = prompt_template.format(
         count=len(chapter_nums),
         chapters_text=chapters_text[:6000],
-        source_context=source_context[:2000] if source_context else "（无）",
+        source_context=source_context[:4000] if source_context else "（无）",
     )
 
     pc = get_prompt_config_with_overrides("unified-review.md", config)
@@ -581,7 +611,8 @@ def _fix_llm(config, task, text, api_key, api_url, model):
 # ============================================================
 
 def run_pipeline(cfg, start, end, api_key=None, api_url=None, model=None,
-                 batch_size=10, workers=10, dry_run=False, skip_llm_review=False):
+                 batch_size=10, workers=10, dry_run=False, skip_llm_review=False,
+                 review_only=False):
     """多 Agent 审改流程。
 
     Flow:
@@ -590,6 +621,8 @@ def run_pipeline(cfg, start, end, api_key=None, api_url=None, model=None,
       3. Plan: dispatch_agent 生成修复任务
       4. Scatter: N 个 fix agent 并行，每人修一批任务
       5. Gather: 收集结果，打印报告
+    
+    review_only=True 时只执行 1-2 步，生成报告，不修复。
     """
     chapters = list(range(start, end + 1))
     t_start = time.time()
@@ -632,6 +665,45 @@ def run_pipeline(cfg, start, end, api_key=None, api_url=None, model=None,
 
     if not summary.chapters:
         print("  ✓ 无问题，无需修复", flush=True)
+        return {}, {str(k): v for k, v in summary.chapters.items()}
+
+    # ========== review-only 模式：只出报告，不修 ==========
+    if review_only:
+        print(f"\n{'='*50}", flush=True)
+        print(f"  审查报告（只读模式）", flush=True)
+        print("="*50, flush=True)
+        
+        # 按优先级分组
+        p0_issues = []
+        p1_issues = []
+        p2_issues = []
+        for ch, info in summary.chapters.items():
+            for iss in info.get("issues", []):
+                entry = {"ch": ch, **iss}
+                if iss.get("priority") == "P0":
+                    p0_issues.append(entry)
+                elif iss.get("priority") == "P1":
+                    p1_issues.append(entry)
+                else:
+                    p2_issues.append(entry)
+        
+        print(f"\n  P0 (严重): {len(p0_issues)}个")
+        for iss in p0_issues:
+            print(f"    ch{iss['ch']}: {iss.get('desc', '?')}")
+        
+        print(f"\n  P1 (中等): {len(p1_issues)}个")
+        for iss in p1_issues:
+            print(f"    ch{iss['ch']}: {iss.get('desc', '?')}")
+        
+        print(f"\n  P2 (轻微): {len(p2_issues)}个")
+        for iss in p2_issues[:10]:
+            print(f"    ch{iss['ch']}: {iss.get('desc', '?')}")
+        if len(p2_issues) > 10:
+            print(f"    ... 还有{len(p2_issues)-10}个")
+        
+        print(f"\n  总计: {s['total_ch']}章有问题 | 均分:{s['avg_score']}")
+        print(f"\n  修复命令: python unified_fixer.py --config <config> --start {start} --end {end}")
+        
         return {}, {str(k): v for k, v in summary.chapters.items()}
 
     # ========== Step 3: Plan — Dispatch Agent ==========
@@ -745,6 +817,7 @@ def main():
     parser.add_argument("--batch-size", type=int, default=10, help="每 agent 审多少章")
     parser.add_argument("--workers", type=int, default=10, help="并行 agent 数")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--review-only", action="store_true", help="只出报告，不执行修复")
     parser.add_argument("--skip-llm-review", action="store_true")
     parser.add_argument("--output", default=None)
     args = parser.parse_args()
@@ -778,6 +851,7 @@ def main():
         workers=args.workers,
         dry_run=args.dry_run,
         skip_llm_review=args.skip_llm_review,
+        review_only=args.review_only,
     )
 
     output = args.output or os.path.join(cfg['rewrites_dir'], 'compare', 'unified_review_fix.json')

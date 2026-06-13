@@ -8,43 +8,60 @@ def natural_sort_key(s):
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
 
 def parse_concept(concept_path):
-    """从 concept.md 解析书名、简介、题材。"""
-    if not os.path.exists(concept_path):
-        return None, None, None
-    
-    with open(concept_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-    
-    # 提取书名（第一个 # 标题）
-    title_match = re.search(r'^#\s*《(.+?)》', content, re.MULTILINE)
-    title = title_match.group(1) if title_match else None
-    
-    # 提取简介（版本B优先，其次版本A，最后第一个版本）
-    blurb = None
-    
-    # 先找版本B（冲突型）
-    blurb_match = re.search(r'###\s*版本B[（\(]冲突型[）\)]?\s*\n+(.+?)(?=\n###|\n##|\Z)', content, re.DOTALL)
-    if blurb_match:
-        blurb = blurb_match.group(1).strip()
-    
-    # 如果没找到B，找版本A（悬念型）
-    if not blurb:
-        blurb_match = re.search(r'###\s*版本A[（\(]悬念型[）\)]?\s*\n+(.+?)(?=\n###|\n##|\Z)', content, re.DOTALL)
+    """从 settings/book_info.md 或 concept.md 解析书名、简介、题材。"""
+    title, blurb, genre = None, None, None
+
+    # 1. 优先从 settings/book_info.md 读取（有简介）
+    if concept_path:
+        book_info_path = os.path.join(os.path.dirname(concept_path), 'settings', 'book_info.md')
+        if os.path.exists(book_info_path):
+            with open(book_info_path, 'r', encoding='utf-8') as f:
+                info = f.read()
+
+            m = re.search(r'书名[：:]\s*(.+)', info)
+            if m:
+                title = m.group(1).strip()
+
+            m = re.search(r'简介[：:]\s*\n(.+?)(?=\n---|\Z)', info, re.DOTALL)
+            if m:
+                blurb = m.group(1).strip()
+
+            m = re.search(r'主分类[：:]\s*(.+)', info)
+            if m:
+                genre = m.group(1).strip()
+
+    # 2. 如果 book_info.md 没有简介，从 concept.md 补充
+    if not blurb and concept_path and os.path.exists(concept_path):
+        with open(concept_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        if not title:
+            title_match = re.search(r'^#\s*《(.+?)》', content, re.MULTILINE)
+            if title_match:
+                title = title_match.group(1).strip()
+
+        # 先找版本B（冲突型）
+        blurb_match = re.search(r'###\s*版本B[（\(]冲突型[）\)]?\s*\n+(.+?)(?=\n###|\n##|\Z)', content, re.DOTALL)
         if blurb_match:
             blurb = blurb_match.group(1).strip()
-    
-    # 如果都没找到，找第一个版本
-    if not blurb:
-        blurb_match = re.search(r'###\s*版本.*?\n+(.+?)(?=\n###|\n##|\Z)', content, re.DOTALL)
-        if blurb_match:
-            blurb = blurb_match.group(1).strip()
-    
-    # 提取题材
-    genre = None
-    genre_match = re.search(r'\*\*题材\*\*[：:]\s*(.+)', content)
-    if genre_match:
-        genre = genre_match.group(1).strip()
-    
+
+        # 如果没找到B，找版本A（悬念型）
+        if not blurb:
+            blurb_match = re.search(r'###\s*版本A[（\(]悬念型[）\)]?\s*\n+(.+?)(?=\n###|\n##|\Z)', content, re.DOTALL)
+            if blurb_match:
+                blurb = blurb_match.group(1).strip()
+
+        # 如果都没找到，找第一个版本
+        if not blurb:
+            blurb_match = re.search(r'###\s*版本.*?\n+(.+?)(?=\n###|\n##|\Z)', content, re.DOTALL)
+            if blurb_match:
+                blurb = blurb_match.group(1).strip()
+
+        if not genre:
+            genre_match = re.search(r'\*\*题材\*\*[：:]\s*(.+)', content)
+            if genre_match:
+                genre = genre_match.group(1).strip()
+
     return title, blurb, genre
 
 
@@ -82,6 +99,14 @@ def find_source_tags(concept_path):
 
 def merge_chapters(input_dir, output_file, encoding='utf-8', concept_path=None):
     """合并章节文件（番茄格式）。"""
+    # 自动推断 concept_path
+    if not concept_path:
+        # 从章节目录往上找 concept.md
+        parent = os.path.dirname(input_dir)
+        candidate = os.path.join(parent, 'concept.md')
+        if os.path.exists(candidate):
+            concept_path = candidate
+
     # 获取所有章节文件（支持新旧两种命名）
     chapter_files = []
     for filename in os.listdir(input_dir):

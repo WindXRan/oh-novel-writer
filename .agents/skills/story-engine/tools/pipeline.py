@@ -20,16 +20,18 @@ from phases import (
     phase_compare,
     phase_unified_check, phase_unified_fix, phase_unified_review_fix,
     phase_style_analysis,
+    phase_unified_review_only,
 )
 from mcp.orchestrator import Orchestrator
 from mcp.phase_meta import PHASES
 
 
 GOAL_MAP = {
-    "all": {"prep", "dissect", "open_book", "extract", "style_analysis", "guides", "write", "validate", "compare"},
+    "all": {"prep", "open_book", "extract", "style_analysis", "guides", "write", "validate", "compare"},
     "open-book": {"prep", "open_book", "extract", "style_analysis"},
     "write": {"write"},                              # 写章+JIT guide+按需expand/trim
     "post": {"trim", "expand", "polish"},             # 后处理三件套，按需组合
+    "review": {"unified_review_only"},                # 只出审查报告，不修复
     "unified": {"write", "unified_review_fix"},
     "dissect": {"prep", "dissect"},
     "rag-index": {"rag_index"},
@@ -118,6 +120,11 @@ def _build_orch(config, state_mgr, config_path=None) -> Orchestrator:
         phase_postfix(cfg, s, e)
         if not cfg.get("_skip_quality"):
             phase_quality_check(cfg, s, e, workers=min(cfg.get("workers", 30), 10))
+        # 自动跑对比
+        try:
+            phase_compare(cfg)
+        except Exception as ex:
+            print(f"  [WARN] compare 失败: {ex}")
 
     def _write_handler_agent(cfg, s, e):
         ok, fail = phase_write_agent(cfg, s, e, workers=cfg.get("workers", 10), state_mgr=state_mgr)
@@ -155,6 +162,17 @@ def _build_orch(config, state_mgr, config_path=None) -> Orchestrator:
     orch.register_handler("unified_check", phase_unified_check)
     orch.register_handler("unified_fix", phase_unified_fix)
     orch.register_handler("unified_review_fix", phase_unified_review_fix)
+    orch.register_handler("unified_review_only", phase_unified_review_only)
+
+    def _rename_titles_handler(cfg, s, e):
+        """章节名重命名：提取源文标题 → LLM 分析风格 + 生成匹配标题。"""
+        try:
+            from chapter_title_renamer import rename_titles
+            rename_titles(cfg, s, e)
+        except Exception as ex:
+            print(f"  [WARN] 章节名重命名失败: {ex}")
+
+    orch.register_handler("rename_titles", _rename_titles_handler)
 
     return orch
 

@@ -1,5 +1,6 @@
 """Phase 1.5: 风格分析（脚本，自动提取源文指标）"""
 
+import sys
 import subprocess
 from pathlib import Path
 
@@ -11,10 +12,10 @@ def phase_style_analysis(config, state_mgr=None):
     print("=" * 50)
 
     if state_mgr:
-        if state_mgr.is_phase_done("style-analysis"):
+        if state_mgr.is_phase_done("style_analysis"):
             print("风格分析已完成，跳过")
             return True
-        state_mgr.phase_start("style-analysis")
+        state_mgr.phase_start("style_analysis")
 
     # 源文目录
     source_book = config.get("source_book", "")
@@ -48,20 +49,20 @@ def phase_style_analysis(config, state_mgr=None):
                 if '已分析' in line or '均值' in line or 'JSON' in line:
                     print(f"  {line.strip()}")
             if state_mgr:
-                state_mgr.phase_done("style-analysis")
+                state_mgr.phase_done("style_analysis")
             return True
         else:
             print(f"  [FAIL] style_analyzer.py 出错: {result.stderr[:200]}")
             if state_mgr:
-                state_mgr.phase_failed("style-analysis", error=result.stderr[:200])
+                state_mgr.phase_failed("style_analysis", error=result.stderr[:200])
             return False
     except subprocess.TimeoutExpired:
         print("  [FAIL] style_analyzer.py 超时")
         if state_mgr:
-            state_mgr.phase_failed("style-analysis", error="超时")
+            state_mgr.phase_failed("style_analysis", error="超时")
         return False
     except Exception as e:
         print(f"  [FAIL] {e}")
         if state_mgr:
-            state_mgr.phase_failed("style-analysis", error=str(e))
+            state_mgr.phase_failed("style_analysis", error=str(e))
         return False

@@ -31,6 +31,37 @@ def phase_unified_check(config, start, end, workers=10, batch_size=25, state_mgr
     return merged
 
 
+def phase_unified_review_only(config, start, end, workers=10, batch_size=25, state_mgr=None):
+    """只出审查报告，不执行修复。"""
+    print(f"\n{'=' * 50}")
+    print(f"审查报告 (ch{start}-{end})")
+    print("=" * 50)
+
+    from unified_fixer import run_pipeline
+
+    api_key = config.get("api_key") or os.environ.get("API_KEY")
+    api_url = config.get("api_base_url", "https://api.deepseek.com").rstrip("/") + "/v1/chat/completions"
+    model = config.get("model", "deepseek-chat")
+
+    results, merged = run_pipeline(
+        config, start, end, api_key, api_url, model,
+        batch_size=batch_size, workers=workers,
+        review_only=True,
+    )
+
+    # 保存报告
+    output = os.path.join(config['rewrites_dir'], 'compare', 'review_report.json')
+    Path(output).parent.mkdir(parents=True, exist_ok=True)
+    Path(output).write_text(json.dumps({
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "range": [start, end],
+        "report": {str(k): v for k, v in (merged or {}).items()},
+    }, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(f"\n  报告已保存: {output}")
+
+    return merged
+
+
 def phase_unified_fix(config, start, end, workers=10, batch_size=25, dry_run=False):
     """统一审改：分批审核→合并→制定任务→执行修复。"""
     print(f"\n{'=' * 50}")

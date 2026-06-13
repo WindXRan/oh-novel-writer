@@ -19,22 +19,26 @@ def load_src_text(src_dir, chapter_num):
 
 
 def call_llm(prompt, api_key=None):
-    """调用 LLM"""
+    """调用 LLM（使用 DeepSeek API）"""
     try:
-        import openai
-        client = openai.OpenAI(api_key=api_key or os.environ.get("API_KEY"))
+        sys.path.insert(0, str(Path(__file__).parent.parent / ".agents" / "skills" / "story-engine" / "tools"))
+        from lib.api_client import call_api, get_api_url
         
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "你是一个专业的网文风格分析师。从源文中提取具体的写作规则，每条规则必须包含 ✅正向示例 和 ❌反向示例。"},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=1000
+        api_key = api_key or os.environ.get("API_KEY")
+        api_url = "https://api.deepseek.com/v1/chat/completions"
+        
+        result = call_api(
+            api_key=api_key,
+            model="deepseek-v4-flash",
+            user_prompt=prompt,
+            reasoning_effort="low",
+            max_tokens=2000,
+            system_prompt="你是一个专业的网文风格分析师。从源文中提取具体的写作规则，每条规则必须包含 ✅正向示例 和 ❌反向示例。",
+            api_url=api_url,
+            temperature=0.7
         )
         
-        return response.choices[0].message.content
+        return result
     except Exception as e:
         print(f"LLM 调用失败: {e}")
         return None

@@ -68,6 +68,13 @@ python .agents/skills/story-engine/tools/rewrite_chapters.py --config configs/xx
     ├── compare.py           # Phase 4: 对比
     ├── review.py            # Phase 4.5-5: 审稿修复
     └── unified.py           # Phase 6: 统一审查修复
+
+# tools/ 目录下的通用工具
+tools/
+├── chapter_title_analyzer.py   # 章节名风格分析器
+├── chapter_title_renamer.py    # 章节名重命名工具（分析+生成+应用）
+├── style_analyzer.py           # 正文风格分析器
+└── story_import.py             # 标准化导入工具
 ```
 
 ## 文件结构
@@ -79,6 +86,7 @@ projects/{作者名}/{源书名}/
 └── rewrites/{新书名}/
     ├── concept.md                    # 精简索引（速查角色名+主线）
     ├── state.json                    # 状态文件（自动管理）
+    ├── chapter_names.txt             # 章节名映射（标题与正文分离）
     ├── 完本报告.md                   # 完本报告（自动生成）
     └── settings/
         ├── characters.md             # 角色设定
@@ -121,6 +129,7 @@ Phase 3.5: Trim (flash)              → 超字数 20% 的章自动精简       
 Phase 3.6: 整章重写 (flash)           → 人设崩塌/节奏失控时重写        [postprocess.py]
 Phase 3.7: 润色 (flash)              → 只改文笔，不改内容             [postprocess.py]
 Phase 3.8: 扩写 (flash)              → 增加内容扩充字数               [postprocess.py]
+Phase 3.9: 章节名重命名 (flash)       → 分析源文风格+生成匹配标题      [chapter_title_renamer.py]
 Phase 4:   对比 (本地)                → compare/报告                  [compare.py]
 Phase 4.5: 审稿 (分批→汇总)          → 审稿报告 + 汇总报告            [review.py]
 Phase 5:   修复 (根据审稿)            → 修复后章节                     [review.py]
@@ -196,6 +205,11 @@ python tools/pipeline.py --config configs/xxx.json --health-output report.json
 
 # 向后兼容（旧入口）
 python tools/rewrite_chapters.py --config configs/xxx.json --phase open-book
+
+# 章节名重命名（Phase 3.9）
+# 自动提取源文标题 + LLM 生成匹配标题 + 应用到章节文件
+python tools/chapter_title_renamer.py configs/xxx.json --start 1 --end 10
+python tools/chapter_title_renamer.py configs/xxx.json --start 1 --end 10 --dry-run  # 预览模式
 ```
 
 ## 配置文件

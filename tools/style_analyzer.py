@@ -66,6 +66,21 @@ def extract_metrics(text):
     emotion_words = ['感到', '心中', '涌起', '不由得', '不禁', '无比']
     has_emotion_words = any(w in text for w in emotion_words)
     
+    # 代词密度分析
+    pronoun_pattern = re.compile(r'^[ \u3000]*[他她我你它]', re.MULTILINE)
+    all_lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 2]
+    pronoun_opening_count = len(pronoun_pattern.findall(text))
+    pronoun_ratio = round(pronoun_opening_count / len(all_lines) * 100, 1) if all_lines else 0
+    # 连续代词开头检测
+    consecutive_pronoun = 0
+    max_consecutive = 0
+    for line in all_lines:
+        if re.match(r'^[他她我你]', line):
+            consecutive_pronoun += 1
+            max_consecutive = max(max_consecutive, consecutive_pronoun)
+        else:
+            consecutive_pronoun = 0
+    
     end_punctuations = {'句号': 0, '问号': 0, '叹号': 0, '引号': 0}
     for p in paragraphs:
         if p.endswith('"') or p.endswith('"'):
@@ -92,6 +107,9 @@ def extract_metrics(text):
         "ellipsis_count": ellipsis_count,
         "has_said_tag": has_said_tag,
         "has_emotion_words": has_emotion_words,
+        "pronoun_ratio": pronoun_ratio,
+        "pronoun_opening_count": pronoun_opening_count,
+        "max_consecutive_pronoun": max_consecutive,
         "end_punctuations": end_punctuations,
     }
 
@@ -125,6 +143,8 @@ def generate_template(d, chapter_num):
 | 比喻句 | {d['simile_count']}句 | ±2 |
 | AI路标词 | {d['ai_marker_count']}次 | **必须0** |
 | 省略号 | {ellipsis_count}个 | {ellipsis_rule} |
+| 代词开头比例 | {d['pronoun_ratio']}% | ≤{d['pronoun_ratio']+2}% |
+| 连续代词开头 | 最多{d['max_consecutive_pronoun']}句 | ≤2句 |
 
 ## 修辞特征（自动生成）
 
@@ -150,6 +170,7 @@ def generate_template(d, chapter_num):
 
 ### 描写规则
 - 情绪表达：{emotion_rule}
+- 代词密度：源文{d['pronoun_ratio']}%以"他/她/我"开头，仿写不超过{d['pronoun_ratio']+2}%。不能连续2句以代词开头。替代方式：名字、身份、省略主语、被动句式。
 
 （LLM 补充：从源文提取 2 条描写规则，每条含 ✅正向示例 + ❌反向示例）
 

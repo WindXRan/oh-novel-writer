@@ -398,17 +398,8 @@ def prompt_tag(name):
 
 
 def tag_output(content, prompt_name):
-    """给输出内容末尾追加 prompt 版本 tag。
-
-    Args:
-        content: 原始输出内容
-        prompt_name: prompt 文件名（如 "write-chapter.md"）
-
-    Returns:
-        末尾追加了版本 tag 的内容
-    """
-    tag = _make_tag(prompt_name, get_prompt_version(prompt_name))
-    return content.rstrip("\n") + "\n" + tag + "\n"
+    """不再添加版本 tag，直接返回原内容。"""
+    return content
 
 
 def get_output_path(prompt_text, replacements=None):
