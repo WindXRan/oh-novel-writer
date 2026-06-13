@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created": "2026-06-11T15:16:55",
-  "updated": "2026-06-11T17:42:47",
+  "updated": "2026-06-13T12:00:07",
   "phases": {
     "open-book": {
       "status": "done",
@@ -10,32 +10,44 @@
     },
     "guides": {
       "status": "done",
-      "started": "2026-06-11T17:42:14",
-      "finished": "2026-06-11T17:42:47"
+      "started": "2026-06-13T11:52:54",
+      "finished": "2026-06-13T11:53:20"
     },
     "write": {
       "status": "done",
       "started": "2026-06-11T16:01:56",
-      "finished": "2026-06-11T16:04:01",
+      "finished": "2026-06-13T12:00:07",
       "total_chars": 7766
+    },
+    "prep": {
+      "status": "done",
+      "finished": "2026-06-13T11:52:52"
+    },
+    "open_book": {
+      "status": "done",
+      "finished": "2026-06-13T11:52:52"
+    },
+    "extract": {
+      "status": "done",
+      "finished": "2026-06-13T11:52:52"
     }
   },
   "chapters": {
     "1": {
       "status": "completed",
-      "timestamp": "2026-06-11T17:42:47",
+      "timestamp": "2026-06-13T11:53:20",
       "model": "deepseek-v4-flash",
       "retries": 0
     },
     "2": {
       "status": "completed",
-      "timestamp": "2026-06-11T16:04:01",
+      "timestamp": "2026-06-13T11:53:11",
       "model": "deepseek-v4-flash",
       "retries": 0
     },
     "3": {
       "status": "completed",
-      "timestamp": "2026-06-11T16:02:40",
+      "timestamp": "2026-06-13T11:53:18",
       "model": "deepseek-v4-flash",
       "retries": 0
     }

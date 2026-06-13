@@ -88,10 +88,10 @@ def issue_dict(i):
 # Prompt 见 prompts/unified-review.md，由 _llm_batch_review 加载
 
 
-def review_agent(config, chapter_batch, api_key, api_url, model, agent_id=0):
+def review_agent(config, chapter_batch, api_key, api_url, model, agent_id=0, skip_llm=False):
     """单个审查 agent。在一批章节上运行 algo 检查 + LLM 批量审稿。
 
-    Input:  config, chapter_batch (list[int]), api_key, api_url, model, agent_id
+    Input:  config, chapter_batch (list[int]), api_key, api_url, model, agent_id, skip_llm
     Output: ReviewResult
     """
     result = ReviewResult()
@@ -112,7 +112,7 @@ def review_agent(config, chapter_batch, api_key, api_url, model, agent_id=0):
 
     # ---- 1b: LLM 批量审稿 (有问题的章) ----
     problem_chs = [ch for ch, d in result.chapters.items() if d.get("issues")]
-    if problem_chs and api_key:
+    if problem_chs and api_key and not skip_llm:
         print(f"    [审查#{agent_id}] LLM 审稿: {len(problem_chs)} 章...", flush=True)
         try:
             ch_data, cross = _llm_batch_review(config, problem_chs, api_key, api_url, model)
@@ -605,7 +605,7 @@ def run_pipeline(cfg, start, end, api_key=None, api_url=None, model=None,
     print(f"  {len(batches)} 个审查 agent 并行启动")
     with ThreadPoolExecutor(max_workers=min(workers, len(batches))) as ex:
         futures = {
-            ex.submit(review_agent, cfg, batch, api_key, api_url, model, agent_id=i): i
+            ex.submit(review_agent, cfg, batch, api_key, api_url, model, agent_id=i, skip_llm=skip_llm_review): i
             for i, batch in enumerate(batches)
         }
         for f in as_completed(futures):
@@ -648,44 +648,47 @@ def run_pipeline(cfg, start, end, api_key=None, api_url=None, model=None,
         print(f"\n  [DRY-RUN] 不执行修复", flush=True)
         return tasks, {str(k): v for k, v in summary.chapters.items()}
 
-    # ========== 确认环节 ==========
-    print(f"\n{'='*50}", flush=True)
-    print(f"  修复计划预览", flush=True)
-    print("="*50, flush=True)
-    print(f"  需修复: {len(tasks)} / {len(chapters)} 章", flush=True)
-    print(f"  机械修复: {mech_total} 处 (AI痕迹词/路标词 — 自动删)", flush=True)
-    print(f"  LLM 修复: {llm_total} 章 (需模型改写)", flush=True)
-    print(f"  无问题跳过: {len(chapters) - len(tasks)} 章", flush=True)
-    if llm_total > 0:
-        print(f"  ⚠ LLM 修复会调用模型改写，消耗 tokens", flush=True)
+    # ========== 确认环节(非交互模式跳过) ==========
+    if not sys.stdin.isatty():
+        print(f"\n  [非交互模式，直接执行]", flush=True)
+    else:
+        print(f"\n{'='*50}", flush=True)
+        print(f"  修复计划预览", flush=True)
+        print("="*50, flush=True)
+        print(f"  需修复: {len(tasks)} / {len(chapters)} 章", flush=True)
+        print(f"  机械修复: {mech_total} 处 (AI痕迹词/路标词 — 自动删)", flush=True)
+        print(f"  LLM 修复: {llm_total} 章 (需模型改写)", flush=True)
+        print(f"  无问题跳过: {len(chapters) - len(tasks)} 章", flush=True)
+        if llm_total > 0:
+            print(f"  ⚠ LLM 修复会调用模型改写，消耗 tokens", flush=True)
 
-    # 按类型分组展示问题分布
-    type_count = {}
-    for ch, task in sorted(tasks.items()):
-        for iss in task.mechanical + task.llm:
-            t = iss.type
-            type_count.setdefault(t, {"count": 0, "chapters": []})
-            type_count[t]["count"] += 1
-            if ch not in type_count[t]["chapters"]:
-                type_count[t]["chapters"].append(ch)
-    if type_count:
-        print(f"\n  问题分布:")
-        order = {"plagiarism": "台词雷同", "word_count": "字数偏差", "character": "人设漂移",
-                 "hook": "钩子不足", "emotion": "直抒情过多", "metaphor": "比喻过多",
-                 "ai_marker": "AI路标词", "ai_trace": "AI痕迹词", "continuity": "连贯性",
-                 "rhythm": "节奏", "dialogue": "对话", "missing": "文件缺失"}
-        for t, info in sorted(type_count.items(), key=lambda x: -x[1]["count"]):
-            label = order.get(t, t)
-            ch_list = info["chapters"][:5]
-            more = f"...共{len(info['chapters'])}章" if len(info['chapters']) > 5 else ""
-            print(f"    {label}: {info['count']} 处 (第{','.join(map(str,ch_list))}章{more})", flush=True)
+        # 按类型分组展示问题分布
+        type_count = {}
+        for ch, task in sorted(tasks.items()):
+            for iss in task.mechanical + task.llm:
+                t = iss.type
+                type_count.setdefault(t, {"count": 0, "chapters": []})
+                type_count[t]["count"] += 1
+                if ch not in type_count[t]["chapters"]:
+                    type_count[t]["chapters"].append(ch)
+        if type_count:
+            print(f"\n  问题分布:")
+            order = {"plagiarism": "台词雷同", "word_count": "字数偏差", "character": "人设漂移",
+                     "hook": "钩子不足", "emotion": "直抒情过多", "metaphor": "比喻过多",
+                     "ai_marker": "AI路标词", "ai_trace": "AI痕迹词", "continuity": "连贯性",
+                     "rhythm": "节奏", "dialogue": "对话", "missing": "文件缺失"}
+            for t, info in sorted(type_count.items(), key=lambda x: -x[1]["count"]):
+                label = order.get(t, t)
+                ch_list = info["chapters"][:5]
+                more = f"...共{len(info['chapters'])}章" if len(info['chapters']) > 5 else ""
+                print(f"    {label}: {info['count']} 处 (第{','.join(map(str,ch_list))}章{more})", flush=True)
 
-    print(f"\n  按 Enter 开始修复，或 Ctrl+C 取消...", end="", flush=True)
-    try:
-        input()
-    except KeyboardInterrupt:
-        print(f"\n  已取消", flush=True)
-        return {}, {str(k): v for k, v in summary.chapters.items()}
+        print(f"\n  按 Enter 开始修复，或 Ctrl+C 取消...", end="", flush=True)
+        try:
+            input()
+        except (EOFError, KeyboardInterrupt):
+            print(f"\n  已取消", flush=True)
+            return {}, {str(k): v for k, v in summary.chapters.items()}
 
     # ========== Step 4: Scatter — Fix Agents ==========
     print(f"\n{'='*40}", flush=True)
