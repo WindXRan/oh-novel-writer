@@ -6,47 +6,37 @@ import subprocess
 from pathlib import Path
 
 
-def phase_compare(config, start, end, batch_size=10):
-    """生成仿写 vs 源文对比报告 + 版本聚合"""
+def phase_compare(config, start=None, end=None, batch_size=10):
+    """写死：只出 1-3 和 1-10 两份对比报告 + 版本聚合"""
     rewrites_dir = config["rewrites_dir"]
     compare_dir = f"{rewrites_dir}/compare"
     compare_script = ".agents/skills/story-compare/compare.py"
 
     print(f"\n{'=' * 50}")
-    print(f"Phase 4: 对比 (ch{start}-{end}, 每{batch_size}章一批)")
+    print("Phase 4: 对比（固定出 1-3 + 1-10）")
     print("=" * 50)
 
-    # 清理旧的对比报告
-    for old_file in Path(compare_dir).glob("对比_*.md"):
-        old_file.unlink()
-    for old_file in Path(compare_dir).glob("源文_*.txt"):
-        old_file.unlink()
-    for old_file in Path(compare_dir).glob("新书_*.txt"):
-        old_file.unlink()
-    print("已清理旧对比报告")
+    ch_dir = Path(rewrites_dir) / "chapters"
 
-    # 分批处理
-    for batch_start in range(start, end + 1, batch_size):
-        batch_end = min(batch_start + batch_size - 1, end)
-        print(f"\n  对比第{batch_start}-{batch_end}章...")
+    ranges = []
+    if all((ch_dir / f"ch_{i:03d}.txt").exists() for i in range(1, 4)):
+        ranges.append((1, 3))
+    if all((ch_dir / f"ch_{i:03d}.txt").exists() for i in range(1, 11)):
+        ranges.append((1, 10))
 
-        cmd = ["python", compare_script, rewrites_dir, str(batch_start), str(batch_end)]
+    for s, e in ranges:
+        print(f"\n  对比第{s}-{e}章...")
+        cmd = ["python", compare_script, rewrites_dir, str(s), str(e)]
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', timeout=120)
             if result.stdout:
                 print(result.stdout)
-            if result.stderr:
-                print(result.stderr)
-
-            print(f"  [OK] 对比_{batch_start}-{batch_end}_报告.md")
-            print(f"  [OK] 对比_{batch_start}-{batch_end}_AI分析.md")
-        except Exception as e:
-            print(f"  [FAIL] 第{batch_start}-{batch_end}章对比失败: {e}")
-            continue
+            print(f"  [OK] 对比_{s}-{e}_报告.md")
+        except Exception as ex:
+            print(f"  [FAIL] 第{s}-{e}章对比失败: {ex}")
 
     # 版本聚合
     _write_version_report(rewrites_dir, compare_dir)
-
     print(f"\n对比报告 → {rewrites_dir}/compare/")
 
 

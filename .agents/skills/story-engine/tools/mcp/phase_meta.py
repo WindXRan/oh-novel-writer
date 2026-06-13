@@ -50,9 +50,9 @@ register(PhaseMeta("write", "写章",
 register(PhaseMeta("validate", "验证章节",
                    depends_on=["write"], produces=["validation_report"],
                    scope="chapter", parallel=True, batchable=True))
-register(PhaseMeta("compare", "对比源文",
+register(PhaseMeta("compare", "对比源文（固定 1-3 + 1-10）",
                    depends_on=["write"], produces=["compare_report"],
-                   scope="chapter", parallel=True, batchable=True))
+                   scope="global", parallel=False, batchable=False))
 register(PhaseMeta("trim", "精简超字数章",
                    depends_on=["write"], produces=["trimmed_ch_N.txt"],
                    scope="chapter", parallel=True, batchable=True))

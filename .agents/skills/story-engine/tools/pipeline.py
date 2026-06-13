@@ -205,11 +205,7 @@ def main():
     if not any("--end" in a for a in sys.argv):
         chs = get_chapters_list(config, include_fanwai=args.include_fanwai)
         if chs:
-            # compare 单独跑时默认只对比前 10 章，避免全量
-            if goal == {"compare"}:
-                args.end = min(max(chs), 10)
-            else:
-                args.end = max(chs)
+            args.end = max(chs)
 
     _run_detect_genre(config, config_path, args)
 
@@ -227,6 +223,20 @@ def main():
     print(f"{'=' * 50}")
 
     t0 = time.time()
+
+    # 对比前一次性清理旧报告（防并行互相删除）
+    if "compare" in goal:
+        from pathlib import Path as _Path
+        _cd = _Path(config["rewrites_dir"]) / "compare"
+        if _cd.exists():
+            for _f in _cd.glob("对比_*.md"):
+                _f.unlink()
+            for _f in _cd.glob("源文_*.txt"):
+                _f.unlink()
+            for _f in _cd.glob("新书_*.txt"):
+                _f.unlink()
+            print("已清理旧对比报告")
+
     orch = _build_orch(config, state_mgr, config_path=args.config)
     results = orch.run(goal, args.start, args.end, args.workers)
 
