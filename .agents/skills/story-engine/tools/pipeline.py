@@ -19,15 +19,17 @@ from phases import (
     phase_postfix, phase_trim, phase_rewrite, phase_polish, phase_expand,
     phase_compare,
     phase_unified_check, phase_unified_fix, phase_unified_review_fix,
+    phase_style_analysis,
 )
 from mcp.orchestrator import Orchestrator
 from mcp.phase_meta import PHASES
 
 
 GOAL_MAP = {
-    "all": {"prep", "open_book", "extract", "guides", "write", "validate", "compare"},
-    "open-book": {"prep", "open_book", "extract"},
-    "write": {"write"},                              # write 自带 JIT guide 生成，不再依赖 guides phase
+    "all": {"prep", "dissect", "open_book", "extract", "style_analysis", "guides", "write", "validate", "compare"},
+    "open-book": {"prep", "open_book", "extract", "style_analysis"},
+    "write": {"write"},                              # 写章+JIT guide+按需expand/trim
+    "post": {"trim", "expand", "polish"},             # 后处理三件套，按需组合
     "unified": {"write", "unified_review_fix"},
     "dissect": {"prep", "dissect"},
     "rag-index": {"rag_index"},
@@ -132,6 +134,7 @@ def _build_orch(config, state_mgr, config_path=None) -> Orchestrator:
 
     orch.register_handler("prep", lambda cfg, s, e: phase_prep(cfg))
     orch.register_handler("open_book", lambda cfg, s, e: phase_open_book(cfg, state_mgr=state_mgr))
+    orch.register_handler("style_analysis", lambda cfg, s, e: phase_style_analysis(cfg, state_mgr=state_mgr))
     orch.register_handler("dissect", lambda cfg, s, e: phase_dissect(cfg, state_mgr=state_mgr))
     orch.register_handler("rag_index", lambda cfg, s, e: phase_rag_index(cfg))
     orch.register_handler("extract", _extract)

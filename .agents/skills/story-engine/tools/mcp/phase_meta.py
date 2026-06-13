@@ -31,7 +31,7 @@ register(PhaseMeta("prep", "项目准备：创建目录",
                    depends_on=[], produces=["dirs"],
                    scope="global", parallel=False, batchable=False))
 register(PhaseMeta("open_book", "开书：concept.md",
-                   depends_on=["prep"], produces=["concept.md"],
+                   depends_on=["prep", "dissect"], produces=["concept.md"],
                    scope="global", parallel=False, batchable=False))
 register(PhaseMeta("dissect", "拆书：全本源文分析",
                    depends_on=["prep"], produces=["source_analysis/"],
@@ -41,6 +41,9 @@ register(PhaseMeta("rag_index", "RAG 索引：拆书产出 → 跨书知识库",
                    scope="global", parallel=False, batchable=False))
 register(PhaseMeta("extract", "提取 book_data.json",
                    depends_on=["prep", "open_book"], produces=["book_data.json"],
+                   scope="global", parallel=False, batchable=False))
+register(PhaseMeta("style_analysis", "源文风格分析（脚本自动提取指标）",
+                   depends_on=["open_book"], produces=["style_analysis/"],
                    scope="global", parallel=False, batchable=False))
 
 # ── 章级 phase（每章独立，可流水线并行） ──

@@ -107,6 +107,9 @@ def merge_chapters(input_dir, output_file, encoding='utf-8', concept_path=None):
         with open(filepath, 'r', encoding=encoding) as f:
             content = f.read().strip()
         
+        # 去掉 prompt 版本 tag（<!-- prompt: xxx.md@N -->）
+        content = re.sub(r'\n*<!--\s*prompt:\s*\S+@\d+\s*-->\s*$', '', content).strip()
+        
         if content:
             merged_content.append(content)
             total_chars += len(content)

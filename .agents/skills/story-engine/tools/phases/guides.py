@@ -59,9 +59,20 @@ def phase_guides(config, start, end, workers=5, serial=False, state_mgr=None):
 
     print(f"plot_guide: OK={len(ok)} FAIL={len(fail)}")
 
+    # style-guide
+    print(f"\n{'=' * 50}")
+    print(f"Phase 2.5: style_guide (flash, ch{start}-{end})")
+    print("=" * 50)
+
+    ok2, fail2 = batch_run(config, "style-guide", start, end, workers, guides_dir,
+                           "style_{ch}.md", skip_existing=True, state_mgr=state_mgr,
+                           run_one_func=run_one)
+
+    print(f"style_guide: OK={len(ok2)} FAIL={len(fail2)}")
+
     if state_mgr:
-        if fail:
-            state_mgr.phase_failed("guides", error=f"{len(fail)} fail")
+        if fail or fail2:
+            state_mgr.phase_failed("guides", error=f"plot:{len(fail)} style:{len(fail2)} fail")
         else:
             state_mgr.phase_done("guides")
 
@@ -157,6 +168,16 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
     if not system_prompt:
         sp_name = get_system_prompt_name(f"{prompt_type}.md") or "system-guide.md"
         system_prompt = load_system_prompt(sp_name)
+
+    # debug_prompts: 默认开启，落盘最终 prompt 方便 debug
+    if config.get("debug_prompts", True) and chapter_num:
+        debug_dir = Path(config["rewrites_dir"]) / "_debug" / "prompts"
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        debug_file = debug_dir / f"ch_{chapter_num:03d}_{prompt_type}_prompt.md"
+        debug_file.write_text(
+            f"# System Prompt\n\n{system_prompt}\n\n---\n\n# User Prompt\n\n{user_prompt}",
+            encoding="utf-8"
+        )
 
     label = f"ch{chapter_num or '?'} {prompt_type}"
     t_req = time.time()
