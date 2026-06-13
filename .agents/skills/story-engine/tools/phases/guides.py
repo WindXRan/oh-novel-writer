@@ -122,7 +122,7 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
         src_chars = replacements.get("目标字数", "0")
         try:
             target = int(src_chars)
-            max_tokens = max(2048, int(target * 1.6))
+            max_tokens = max(2048, int(target * 1.3))
         except ValueError:
             max_tokens = pc.get("max_tokens", 8192)
     else:
@@ -131,6 +131,17 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
     # 合并额外替换变量（如串行模式的上一章摘要）
     if extra_replacements:
         replacements.update(extra_replacements)
+
+    # 前15章注入拆书开局分析（如果存在 _opening_summary.md）
+    if chapter_num and chapter_num <= 15:
+        base_dir = config.get("base_dir", os.getcwd())
+        summary_path = Path(base_dir) / "projects" / config.get("author", "") / config.get("source_book", "") / "_cache" / "source_analysis" / "_opening_summary.md"
+        if summary_path.exists() and summary_path.stat().st_size > 50:
+            opening_section = summary_path.read_text(encoding="utf-8").strip()
+            if "分析_开局" not in replacements:
+                replacements["分析_开局"] = f"\n【源文开局分析】\n{opening_section}\n"
+    if "分析_开局" not in replacements:
+        replacements["分析_开局"] = ""
 
     prompt_path = f"{prompts_dir}/{prompt_type}.md"
     user_prompt = load_prompt(prompt_path, base_dir, replacements, mode="api", rewrites_dir=config.get("rewrites_dir"))
