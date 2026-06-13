@@ -66,125 +66,181 @@ shell: powershell
 
 ## 流程
 
-### 0. 前置条件
-确保源文已拆章到 `_cache/chapters/`（由 story-import 完成）。
+**核心前提：拆书必须覆盖全书，不能只看开头。** 采样采用"情绪曲线 + 开局保障"双保险。
 
-### 1. 决定分析范围
+### 0. 前置条件
+确保源文已拆章到 `_cache/chapters/` + 已有 `_toc.txt`（由 story-import 完成）。
+
+### 1. 曲线分析 — 情绪驱动选章
+
+读 `_toc.txt`，用 flash 分析全文情绪曲线，让 LLM 根据章节标题选出关键章节。这是最重要的一步——LLM 能识别"决裂""真相""高潮""反转"等情绪转折点，机械等距做不到。
 
 ```bash
-# 使用 story-style 的风格指纹（定量锚点，增强分析质量）
-python .agents/skills/story-engine/tools/calc_style_profile.py projects/{作者名}/{源书名}/_cache/chapters/第N章.txt -o projects/{作者名}/{源书名}/_cache/analysis/style_profile_N.json
+# 复用 open_book.py 的 _detect_curve 方法
+python -c "
+import sys; sys.path.insert(0, '.agents/skills/story-engine/tools')
+from phases.open_book import _detect_curve
+# ...
+"
 ```
 
-### 2. 并行分析（5 agents 并行）
+选章结果合并以下规则去重：
 
-启动 5 个 agent，每个分析 1 个维度。每个 agent：
-1. 读 chapters/ 下全部章节（或按采样策略读关键章节）
-2. 读已有 style_profile（如有）
-3. 按自身维度输出报告
+| 来源 | 数量 | 说明 |
+|------|------|------|
+| LLM曲线分析 | 10-15章 | 基于情绪转折选的关键章，覆盖各弧线阶段 |
+| 前15章保障 | 第1-15章 | 保证开篇分析密度（基调/角色/钩子/留存） |
+| 后5章保障 | 最后5章 | 保证收尾完成度评估 |
 
-全本分析 token 开销大，默认采样策略：
-- ≤30章 → 全部读取
-- 31-100章 → 隔章采样
-- >100章 → 每3章取1章 + 首尾必取
+### 2. 构建分析素材
+
+合并所有选定章节到 `_samples.txt`，每章标注身份（开局/LLM选中/收尾）：
+
+同时保存关键章节列表供 pipeline 复用：
+
+```
+_cache/source_analysis/_samples.txt       # 全本章节样本拼接
+_cache/source_analysis/_key_chapters.json  # 关键章节号列表 [1, 15, 23, ...]
+```
+
+`_key_chapters.json` 格式：
+```json
+[1, 15, 23, 31, 42, 58, 66, 81, 89, 99, 114, 125, 132, 143, 153]
+```
 
 ### 3. 输出文件
 
 ```
 projects/{作者名}/{源书名}/
 └── _cache/source_analysis/
-    ├── architecture.json      # 情节架构
-    ├── conflict.json          # 冲突图谱
-    ├── character_model.json   # 角色行为模型
-    ├── technique.json         # 写法特征
-    ├── evaluation.json        # 源文评鉴
-    └── summary.md             # 汇总摘要（自动合并5维度）
+    ├── _samples.txt            # 关键章节拼接（供 agent / API 消费）
+    ├── _key_chapters.json      # 关键章节号列表 [1, 15, 23, ...]
+    ├── _opening_summary.md     # 开局分析摘要（前15章，供写章阶段注入）
+    ├── architecture.md         # 情节架构
+    ├── conflict.md             # 冲突图谱
+    ├── character_model.md      # 角色行为模型
+    ├── technique.md            # 写法特征
+    └── evaluation.md           # 源文评鉴
 ```
 
 ### 4. 消费方
 
 Phase 1（open-book）读取 `_cache/source_analysis/` 下文件：
-- `evaluation.json` → 确定赛道对标策略和短板改进方向
-- `architecture.json` → 弧线规划参考
-- `character_model.json` → 角色行为模式脱胎换骨
-- `conflict.json` → 冲突替换规划
-- `technique.json` → 写作技法继承/替换决策
+- `evaluation.md` → 确定赛道对标策略和短板改进方向
+- `architecture.md` → 弧线规划参考
+- `character_model.md` → 角色行为模式脱胎换骨
+- `conflict.md` → 冲突替换规划
+- `technique.md` → 写作技法继承/替换决策
 
 ## 输出格式
 
-### architecture.json
-```json
-{
-  "phases": [
-    {"name": "起", "start": 1, "end": 20, "emotion": "轻松/甜", "density": "high"}
-  ],
-  "turning_points": [
-    {"chapter": 21, "type": "决裂", "intensity": "爆"}
-  ],
-  "emotion_curve": {"1": "甜", "2": "甜", "21": "虐"},
-  "beat_patterns": ["误会式冲突", "第三者介入", "英雄救美"]
-}
+所有输出用 markdown，不用 JSON。结构化但保留可读性。
+
+### architecture.md
+```markdown
+# 情节架构
+
+## 弧线阶段
+| 阶段 | 章节范围 | 情绪基调 | 情节密度 |
+|------|---------|---------|---------|
+| 起 | 1-20 | 轻松/甜 | 高 |
+
+## 关键转折点
+- 第21章：决裂（爆）
+- 第45章：反转（中）
+
+## 情绪曲线
+第1章：甜 → 第2章：甜 → … → 第21章：虐
+
+## 节拍模式
+源文常用节拍：误会式冲突、第三者介入、英雄救美
 ```
 
-### conflict.json
-```json
-{
-  "major_conflicts": [
-    {"type": "身份冲突", "chapters": "1-30", "evolution": "秘密→半公开→爆发"}
-  ],
-  "conflict_density": {"1-10": "high", "11-20": "medium"},
-  "replacement_suggestions": {
-    "身份冲突": "可换为利益冲突",
-    "信息差": "可换为道德困境"
-  }
-}
+### conflict.md
+```markdown
+# 冲突图谱
+
+## 主线冲突
+| 冲突类型 | 覆盖章节 | 演变路径 |
+|---------|---------|---------|
+| 身份冲突 | 1-30 | 秘密→半公开→爆发 |
+
+## 冲突密度
+| 章节范围 | 密度 |
+|---------|------|
+| 1-10 | 高 |
+| 11-20 | 中 |
+
+## 冲突替换建议
+- 身份冲突 → 可换为利益冲突（同强度）
+- 信息差 → 可换为道德困境（更高级）
 ```
 
-### character_model.json
-```json
-{
-  "characters": [
-    {
-      "name": "源文角色A",
-      "stress_response": "回避/压抑",
-      "decision_pattern": "理性优先，但情感爆发时失控",
-      "emotional_pattern": "外表冷静内心波动",
-      "weakness": "过度负责",
-      "arc": "从封闭到打开"
-    }
-  ],
-  "interaction_patterns": [
-    {"pair": "A-B", "pattern": "追逃模式", "evolution": "A追B逃→B主动"}
-  ]
-}
+### character_model.md
+```markdown
+# 角色行为模型
+
+## 源文角色A
+| 维度 | 描述 |
+|------|------|
+| 应激反应 | 回避/压抑 |
+| 决策模式 | 理性优先，但情感爆发时失控 |
+| 情感模式 | 外表冷静内心波动 |
+| 弱点 | 过度负责 |
+| 成长弧线 | 从封闭到打开 |
+
+## 角色互动模式
+| 角色对 | 模式 | 演变 |
+|-------|------|------|
+| A-B | 追逃模式 | A追B逃→B主动 |
 ```
 
-### technique.json
-```json
-{
-  "hook_types": {"悬念式": 0.3, "情绪式": 0.4, "冲突式": 0.3},
-  "scene_structure": "以对话为主(60%)",
-  "dialogue_ratio": 0.55,
-  "sensory_distribution": {"视觉": 0.5, "听觉": 0.2, "触觉": 0.2, "其他": 0.1},
-  "avg_sentence_length": 18.5,
-  "pov": "单一女主POV"
-}
+### technique.md
+```markdown
+# 写法特征
+
+## 钩子模式
+| 类型 | 占比 |
+|------|------|
+| 悬念式 | 30% |
+| 情绪式 | 40% |
+| 冲突式 | 30% |
+
+## 场景结构
+以对话为主（对话60%，叙事30%，描写10%）
+
+## 感官运用
+视觉50%、听觉20%、触觉20%、其他10%
+
+## 节奏
+- 平均句长：18.5字
+- 段落偏好：短段为主
+
+## 视角
+单一女主POV
 ```
 
-### evaluation.json
-```json
-{
-  "dimensions": [
-    {"name": "节奏", "score": 4, "strategy": "对齐"},
-    {"name": "人设", "score": 3, "strategy": "改进"},
-    {"name": "冲突", "score": 2, "strategy": "改进"},
-    {"name": "爽点", "score": 5, "strategy": "对齐"},
-    {"name": "文笔", "score": 3, "strategy": "改进"},
-    {"name": "擦边浓度", "score": 4, "strategy": "对齐"}
-  ],
-  "core_success_factors": ["擦边节奏好", "爽点密集"],
-  "must_fix": ["冲突类型单一", "配角工具化"]
-}
+### evaluation.md
+```markdown
+# 源文评鉴
+
+## 维度评分
+| 维度 | 评分 | 策略 | 说明 |
+|------|------|------|------|
+| 节奏 | 4/5 | 对齐 | 节奏好，保持 |
+| 人设 | 3/5 | 改进 | 配角工具化，需改善 |
+| 冲突 | 2/5 | 改进 | 类型单一，需丰富 |
+| 爽点 | 5/5 | 对齐 | 核心卖点，必须保留 |
+| 文笔 | 3/5 | 改进 | 描写偏弱 |
+| 擦边浓度 | 4/5 | 对齐 | 赛道特征 |
+
+## 核心成功因子
+1. 擦边节奏好
+2. 爽点密集
+
+## 必须改进
+1. 冲突类型单一
+2. 配角工具化
 ```
 
 ## Pipeline 集成

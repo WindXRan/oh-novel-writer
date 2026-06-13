@@ -33,6 +33,9 @@ register(PhaseMeta("prep", "项目准备：创建目录",
 register(PhaseMeta("open_book", "开书：concept.md",
                    depends_on=["prep"], produces=["concept.md"],
                    scope="global", parallel=False, batchable=False))
+register(PhaseMeta("dissect", "拆书：全本源文分析",
+                   depends_on=["prep"], produces=["source_analysis/"],
+                   scope="global", parallel=False, batchable=False))
 register(PhaseMeta("extract", "提取 book_data.json",
                    depends_on=["prep", "open_book"], produces=["book_data.json"],
                    scope="global", parallel=False, batchable=False))

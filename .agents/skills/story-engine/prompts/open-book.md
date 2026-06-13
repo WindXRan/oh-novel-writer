@@ -1,22 +1,30 @@
 ---
-version: 1
-changelog: 初始版本
+version: 3
+changelog: 注入裁剪: 只注evaluation, 其余走【标签】引用
 type: user
 phase: open_book
 description: 开书设定生成
 required_vars: ["作者名", "源书名", "新书名"]
-optional_vars: ["源文样本"]
+optional_vars: ["源文样本", "源文分析"]
+extra_vars: ["弧线参考", "冲突图谱参考", "角色模型参考", "写法参考"]
 system_prompt: system-generic.md
 defaults: {"model": "deepseek-v4-pro", "max_tokens": 8192, "reasoning_effort": "high", "temperature": 0.8}
 ---
-
 为仿写项目设计新书设定——**吃透源文，同赛道做到位**。
 
 【源文_头部】projects/{作者名}/{源书名}/_cache/_header.txt
 
 {源文样本}
 
-读上面文件，先搞清楚源文在什么维度上强、什么维度上弱，再设计新书设定——**源文的赛道特征不能丢，弱势方向可以补，但不能换赛道。**
+{源文分析}
+
+如需深入了解特定维度，可参考以下分析文件（按需读取）：
+【弧线参考】projects/{作者名}/{源书名}/_cache/source_analysis/architecture.md
+【冲突图谱参考】projects/{作者名}/{源书名}/_cache/source_analysis/conflict.md
+【角色模型参考】projects/{作者名}/{源书名}/_cache/source_analysis/character_model.md
+【写法参考】projects/{作者名}/{源书名}/_cache/source_analysis/technique.md
+
+读上面内容，先搞清楚源文在什么维度上强、什么维度上弱，再设计新书设定——**源文的赛道特征不能丢，弱势方向可以补，但不能换赛道。**
 
 ---
 

@@ -11,7 +11,7 @@ from state_manager import StateManager
 from config_validator import validate_config
 from utils import get_chapters_list
 from phases import (
-    phase_prep, phase_open_book,
+    phase_prep, phase_open_book, phase_dissect,
     phase_guides,
     phase_write, phase_write_agent,
     phase_validate,
@@ -28,6 +28,7 @@ GOAL_MAP = {
     "open-book": {"prep", "open_book", "extract"},
     "write": {"guides", "write"},
     "unified": {"write", "unified_review_fix"},
+    "dissect": {"prep", "dissect"},
 }
 
 
@@ -127,6 +128,7 @@ def _build_orch(config, state_mgr, config_path=None) -> Orchestrator:
 
     orch.register_handler("prep", lambda cfg, s, e: phase_prep(cfg))
     orch.register_handler("open_book", lambda cfg, s, e: phase_open_book(cfg, state_mgr=state_mgr))
+    orch.register_handler("dissect", lambda cfg, s, e: phase_dissect(cfg, state_mgr=state_mgr))
     orch.register_handler("extract", _extract)
     orch.register_handler("guides", _guide_handler)
     # 根据 execution_mode 选择 write handler

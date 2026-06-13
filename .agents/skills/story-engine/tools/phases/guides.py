@@ -132,14 +132,15 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
     if extra_replacements:
         replacements.update(extra_replacements)
 
-    # 前15章注入拆书开局分析（如果存在 _opening_summary.md）
+    # 前15章按粒度注入拆书开局分析
     if chapter_num and chapter_num <= 15:
         base_dir = config.get("base_dir", os.getcwd())
         summary_path = Path(base_dir) / "projects" / config.get("author", "") / config.get("source_book", "") / "_cache" / "source_analysis" / "_opening_summary.md"
         if summary_path.exists() and summary_path.stat().st_size > 50:
-            opening_section = summary_path.read_text(encoding="utf-8").strip()
+            content = summary_path.read_text(encoding="utf-8").strip()
+            opening_section = content
             if "分析_开局" not in replacements:
-                replacements["分析_开局"] = f"\n【源文开局分析】\n{opening_section}\n"
+                replacements["分析_开局"] = f"\n【源文开局分析（适用于前15章写章）】\n{opening_section}\n"
     if "分析_开局" not in replacements:
         replacements["分析_开局"] = ""
 

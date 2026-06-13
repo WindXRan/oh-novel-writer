@@ -1,11 +1,11 @@
 ---
-version: 4
-changelog: 换皮优先原则 + 接入脱敏源文
+version: 5
+changelog: 前15章注入开局分析
 type: user
 phase: guides
 description: 章纲生成
 required_vars: ["N", "新书名", "作者名", "源书名", "源文全文", "目标字数", "目标字数_min", "目标字数_max", "源文字数"]
-optional_vars: ["genre"]
+optional_vars: ["genre", "分析_开局"]
 system_prompt: system-guide.md
 defaults: {"model": "deepseek-v4-flash", "max_tokens": 8192, "reasoning_effort": "low", "temperature": 0.8}
 ---
@@ -16,6 +16,7 @@ defaults: {"model": "deepseek-v4-flash", "max_tokens": 8192, "reasoning_effort":
 【剧情】projects/{作者名}/{源书名}/rewrites/{新书名}/settings/plot.md
 【世界观】projects/{作者名}/{源书名}/rewrites/{新书名}/settings/world.md
 【样板库】.agents/skills/story-engine/knowledge/INDEX.md
+{分析_开局}
 
 ---
 

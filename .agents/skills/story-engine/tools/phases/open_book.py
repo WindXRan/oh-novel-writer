@@ -195,10 +195,75 @@ def _build_sample_block(config, chapter_numbers):
 # Phase 1: 开书
 # ============================================================
 
+def _load_dissect_output(config):
+    """读取 story-dissect 的分析产出，如果存在则返回 (key_chapters, analysis_text)。
+
+    只注入 evaluation.md 的评分+结论，控制 context 开销。
+    不存在的文件自动跳过（优雅降级）。校验 _version.json 确保数据未过时。
+
+    Returns:
+        (key_chapters_list, analysis_text) 或 (None, "")
+    """
+    base_dir = config.get("base_dir", os.getcwd())
+    author = config.get("author", "")
+    source_book = config.get("source_book", "")
+    analysis_dir = Path(base_dir) / "projects" / author / source_book / "_cache" / "source_analysis"
+
+    if not analysis_dir.exists():
+        return None, ""
+
+    # 版本校验
+    vf = analysis_dir / "_version.json"
+    if vf.exists():
+        try:
+            vdata = json.loads(vf.read_text(encoding="utf-8"))
+            if vdata.get("dissect_version", 0) < 1:
+                print("  [DISSECT] 版本过旧，跳过（需 >=1）")
+                return None, ""
+        except Exception:
+            pass
+
+    # 读取关键章节列表（由 dissect 在曲线分析阶段生成）
+    kc_file = analysis_dir / "_key_chapters.json"
+    key_chapters = None
+    if kc_file.exists():
+        try:
+            key_chapters = json.loads(kc_file.read_text(encoding="utf-8"))
+            if not isinstance(key_chapters, list) or len(key_chapters) < 3:
+                key_chapters = None
+        except Exception:
+            pass
+
+    # 只读 evaluation.md，其他分析文件留作 【标签】 引用按需加载
+    # 从 evaluation.md 提取评分表 + 核心结论，去掉详细说明以节省 context
+    analysis_text = ""
+    eval_file = analysis_dir / "evaluation.md"
+    if eval_file.exists() and eval_file.stat().st_size > 100:
+        content = eval_file.read_text(encoding="utf-8").strip()
+        # 提取关键部分：赛道判定 + 维度评分表 + 核心成功因子 + 必须改进
+        # 通过 markdown 标题截取
+        parts = []
+        for section_header in ["赛道判定", "维度评分", "核心成功因子", "必须改进"]:
+            idx = content.find(f"## {section_header}")
+            if idx >= 0:
+                next_idx = content.find("\n## ", idx + len(section_header) + 10)
+                if next_idx < 0:
+                    next_idx = len(content)
+                parts.append(content[idx:next_idx].strip())
+        if parts:
+            analysis_text = "\n\n".join(parts)
+        else:
+            # 降级：取前 1/3 作为摘要
+            lines = content.split("\n")
+            analysis_text = "\n".join(lines[:max(len(lines)//3, 20)])
+
+    return key_chapters, analysis_text
+
+
 def phase_open_book(config, state_mgr=None):
-    """两段式开书：曲线分析(flash) → 选章精读 → 开书(pro)。"""
+    """两段式开书：先尝试复用 dissect 分析，否则自动曲线分析 → 选章 → 开书(pro)。"""
     print("\n" + "=" * 50)
-    print("Phase 1: 开书 (两段式: curve→open-book)")
+    print("Phase 1: 开书")
     print("=" * 50)
 
     if state_mgr:
@@ -215,19 +280,40 @@ def phase_open_book(config, state_mgr=None):
     from lib.api_client import get_api_url
     api_url = get_api_url(config)
 
-    # === Stage 1: 曲线分析 → 选关键章节 ===
-    key_chapters = _detect_curve(config, api_key, api_url)
+    # === Stage 1: 尝试复用 dissect，否则走曲线分析 ===
+    dissect_chapters, dissect_analysis = _load_dissect_output(config)
+    if dissect_chapters:
+        key_chapters = dissect_chapters
+        print(f"  [DISSECT] 复用拆书分析，关键章节: {key_chapters}")
+    else:
+        key_chapters = _detect_curve(config, api_key, api_url)
 
     # === Stage 2: 用选定的章节做开书分析 ===
     total_ch = get_total_chapters(config)
+
+    # 构建样本：有 dissect _samples.txt 则复用，否则自己拼接
+    samples_path = Path(base_dir) / "projects" / config.get("author", "") / config.get("source_book", "") / "_cache" / "source_analysis" / "_samples.txt"
+    if samples_path.exists():
+        sample_content = samples_path.read_text(encoding="utf-8")
+        print(f"  [DISSECT] 复用样本文件: {samples_path.name}")
+    else:
+        sample_content = _build_sample_block(config, key_chapters)
+
     replacements = {
         "新书名": config["book_name"],
         "作者名": config.get("author", ""),
         "源书名": config.get("source_book", ""),
         "总章数": str(total_ch),
         "genre": config.get("genre", ""),
-        "源文样本": _build_sample_block(config, key_chapters),
+        "源文样本": sample_content,
     }
+
+    # 注入 dissect 分析结果（如果有）
+    if dissect_analysis:
+        replacements["源文分析"] = dissect_analysis
+        print("  [DISSECT] 注入源文分析结果")
+    else:
+        replacements["源文分析"] = ""
 
     trend_content = ""
     trend_dir = config.get("trend_dir")
