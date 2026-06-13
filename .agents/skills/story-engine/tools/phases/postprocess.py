@@ -147,9 +147,15 @@ def phase_rewrite(config, start, end, workers=5):
             ch_file.unlink(missing_ok=True)
             result = run_one(config, "write-chapter", ch)
             
-            # 生成标题
-            title = f"第{ch}章"
-            ch_file.write_text(tag_output(title + '\n\n' + result.strip(), "write-chapter.md"), encoding='utf-8')
+            # 保留 LLM 自生成的章名；若没有则 fallback 到泛化标题
+            result = result.strip()
+            if result.startswith('第') and '章' in result[:10]:
+                title_line = result.split('\n')[0]
+                body = '\n'.join(result.split('\n')[1:]).strip()
+                ch_file.write_text(tag_output(title_line + '\n\n' + body, "write-chapter.md"), encoding='utf-8')
+            else:
+                title = f"第{ch}章"
+                ch_file.write_text(tag_output(title + '\n\n' + result, "write-chapter.md"), encoding='utf-8')
             rewritten += 1
         except Exception as e:
             print(f"  [FAIL] rewrite ch{ch}: {e}")
