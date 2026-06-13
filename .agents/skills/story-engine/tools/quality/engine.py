@@ -46,7 +46,8 @@ def _format_plot_beats(config, ch: int) -> str:
         if guide_path.exists():
             text = guide_path.read_text(encoding="utf-8")
             beats = re.search(r"节拍映射表.*?(?=\n##|\Z)", text, re.DOTALL)
-            return beats.group(0) if beats else text
+            result = beats.group(0) if beats else text
+            return result[:1500]  # truncate to keep prompt lean
     return "（无 plot_guide）"
 
 
@@ -194,6 +195,22 @@ def agent_checks(config, ch: int, api_key: str) -> dict:
                 results[name] = f.result(timeout=AGENT_TIMEOUT)
             except Exception as e:
                 results[name] = {"error": str(e), "pass": False}
+
+    # retry failed agents once
+    retries = {n: cfg for n, cfg in agents.items()
+               if n in results and "error" in results[n]}
+    if retries:
+        with ThreadPoolExecutor(max_workers=len(retries)) as ex:
+            futures = {
+                ex.submit(_run_agent, api_key, cfg["prompt"], cfg["vars"]): name
+                for name, cfg in retries.items()
+            }
+            for f in as_completed(futures):
+                name = futures[f]
+                try:
+                    results[name] = f.result(timeout=AGENT_TIMEOUT)
+                except Exception as e:
+                    results[name] = {"error": str(e), "pass": False}
 
     return results
 
