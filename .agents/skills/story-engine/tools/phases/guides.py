@@ -118,13 +118,9 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
             replacements["源文全文"] = source_text or "（源文读取失败）"
 
     # 写章时按目标字数动态设 max_tokens（够写完整不截断，超字数靠 trim 裁）
+    # 写章时字数控制靠 prompt 内"每段约 X 字"指令，不靠 max_tokens 硬顶
     if prompt_type == "write-chapter" and chapter_num:
-        src_chars = replacements.get("目标字数", "0")
-        try:
-            target = int(src_chars)
-            max_tokens = max(2048, int(target * 1.3))
-        except ValueError:
-            max_tokens = pc.get("max_tokens", 8192)
+        max_tokens = 4096
     else:
         max_tokens = pc.get("max_tokens", 8192)
 
@@ -143,6 +139,10 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
                 replacements["分析_开局"] = f"\n【源文开局分析（适用于前15章写章）】\n{opening_section}\n"
     if "分析_开局" not in replacements:
         replacements["分析_开局"] = ""
+
+    # RAG 跨书参考检索（写章时注入同类经验）
+    if prompt_type == "write-chapter":
+        _inject_rag_reference(config, chapter_num, replacements)
 
     prompt_path = f"{prompts_dir}/{prompt_type}.md"
     user_prompt = load_prompt(prompt_path, base_dir, replacements, mode="api", rewrites_dir=config.get("rewrites_dir"))
@@ -259,6 +259,27 @@ def run_one_with_template(config, prompt_type, chapter_num=None, **kwargs):
 
 
 
+
+
+def _inject_rag_reference(config, chapter_num, replacements):
+    """RAG 跨书参考检索：读 plot_guide 查同类经验，注入 {分析_跨书参考}。"""
+    try:
+        from rag_retriever import retrieve, format_retrieval_results
+        base_dir = config.get("base_dir", os.getcwd())
+        genre = config.get("genre", "")
+        plot_path = Path(config.get("rewrites_dir", "")) / "guides" / f"plot_{chapter_num}.md"
+        query_text = ""
+        if plot_path.exists():
+            query_text = plot_path.read_text(encoding="utf-8")[:2000]
+        if query_text and len(query_text) > 50:
+            results = retrieve(query_text, genre=genre, top_k=3, base_dir=base_dir)
+            rag_content = format_retrieval_results(results) if results else ""
+        else:
+            rag_content = ""
+        replacements["分析_跨书参考"] = rag_content
+    except Exception as e:
+        print(f"  [RAG] 检索失败: {e}")
+        replacements["分析_跨书参考"] = ""
 
 
 def get_source_metrics(config, ch):

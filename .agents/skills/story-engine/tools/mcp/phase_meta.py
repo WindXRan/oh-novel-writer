@@ -36,6 +36,9 @@ register(PhaseMeta("open_book", "开书：concept.md",
 register(PhaseMeta("dissect", "拆书：全本源文分析",
                    depends_on=["prep"], produces=["source_analysis/"],
                    scope="global", parallel=False, batchable=False))
+register(PhaseMeta("rag_index", "RAG 索引：拆书产出 → 跨书知识库",
+                   depends_on=["dissect"], produces=["rag_store/"],
+                   scope="global", parallel=False, batchable=False))
 register(PhaseMeta("extract", "提取 book_data.json",
                    depends_on=["prep", "open_book"], produces=["book_data.json"],
                    scope="global", parallel=False, batchable=False))

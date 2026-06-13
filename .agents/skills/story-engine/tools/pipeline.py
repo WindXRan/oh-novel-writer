@@ -11,7 +11,7 @@ from state_manager import StateManager
 from config_validator import validate_config
 from utils import get_chapters_list
 from phases import (
-    phase_prep, phase_open_book, phase_dissect,
+    phase_prep, phase_open_book, phase_dissect, phase_rag_index,
     phase_guides,
     phase_write, phase_write_agent,
     phase_validate,
@@ -30,6 +30,7 @@ GOAL_MAP = {
     "write": {"guides", "write"},
     "unified": {"write", "unified_review_fix"},
     "dissect": {"prep", "dissect"},
+    "rag-index": {"rag_index"},
 }
 
 
@@ -132,6 +133,7 @@ def _build_orch(config, state_mgr, config_path=None) -> Orchestrator:
     orch.register_handler("prep", lambda cfg, s, e: phase_prep(cfg))
     orch.register_handler("open_book", lambda cfg, s, e: phase_open_book(cfg, state_mgr=state_mgr))
     orch.register_handler("dissect", lambda cfg, s, e: phase_dissect(cfg, state_mgr=state_mgr))
+    orch.register_handler("rag_index", lambda cfg, s, e: phase_rag_index(cfg))
     orch.register_handler("extract", _extract)
     orch.register_handler("guides", _guide_handler)
     # 根据 execution_mode 选择 write handler
@@ -249,7 +251,14 @@ def main():
             print("已清理旧对比报告")
 
     orch = _build_orch(config, state_mgr, config_path=args.config)
-    results = orch.run(goal, args.start, args.end, args.workers)
+    # 从 goal 中移除 compare，让 orchestrator 不调度它（scope=global 会跑在章级之前）
+    # compare 在章级阶段全部完成后手动执行
+    run_goal = goal - {"compare"} if "compare" in goal else goal
+    results = orch.run(run_goal, args.start, args.end, args.workers)
+
+    # 章级全部完成后，再跑 compare
+    if "compare" in goal:
+        phase_compare(config)
 
     _post_process(config, goal)
     _print_report(t0, config)
