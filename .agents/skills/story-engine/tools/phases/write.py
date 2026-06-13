@@ -1,16 +1,59 @@
-"""Phase 3: 写章"""
+"""Phase 3: 写章（含 JIT guide 自动生成，不再依赖 guides phase 预生成）"""
 
 import os
 import re
 import time
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from utils import count_source_chars, batch_run
 
 
+def _ensure_plot_guides(config, start, end, workers=10):
+    """JIT: 写章前自动生成缺失的 plot_guide。
+    
+    核心优化：guides 不再提前生成一大片。只生成即将写章的那些，0 浪费。
+    """
+    from phases.guides import run_one as guide_run_one, process_plot_guide_output
+    from state_manager import atomic_write_text
+
+    guides_dir = Path(config["rewrites_dir"]) / "guides"
+    guides_dir.mkdir(parents=True, exist_ok=True)
+
+    missing = []
+    for ch in range(start, end + 1):
+        plot_file = guides_dir / f"plot_{ch}.md"
+        if not plot_file.exists() or plot_file.stat().st_size < 50:
+            missing.append(ch)
+
+    if not missing:
+        return
+
+    print(f"  [JIT] 自动生成 {len(missing)} 个缺失 plot_guide: ch{min(missing)}-{max(missing)}")
+    t0 = time.time()
+    ok_count = 0
+
+    with ThreadPoolExecutor(max_workers=min(workers, len(missing), 50)) as ex:
+        futures = {ex.submit(guide_run_one, config, "plot-guide", ch): ch for ch in missing}
+        for f in as_completed(futures):
+            ch = futures[f]
+            try:
+                result = f.result()
+                result = process_plot_guide_output(config, ch, result)
+                atomic_write_text(guides_dir / f"plot_{ch}.md", result)
+                ok_count += 1
+            except Exception as e:
+                print(f"  [JIT] ch{ch} plot-guide ✗: {e}")
+
+    print(f"  [JIT] plot_guide: {ok_count}/{len(missing)} 完成 ({time.time()-t0:.0f}s)")
+
+
 def phase_write(config, start, end, workers=10, state_mgr=None):
-    """并行写章 + 异常章自动重跑。"""
+    """并行写章 + 异常章自动重跑 + JIT guide 自动生成。"""
     from phases.guides import run_one
+
+    # Step 0: JIT 生成缺失 plot_guide（只对要写的章，不浪费）
+    _ensure_plot_guides(config, start, end, workers)
 
     chapters_dir = f"{config['rewrites_dir']}/chapters"
     write_cfg = {**config}

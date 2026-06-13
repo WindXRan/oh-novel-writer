@@ -27,7 +27,7 @@ from mcp.phase_meta import PHASES
 GOAL_MAP = {
     "all": {"prep", "open_book", "extract", "guides", "write", "validate", "compare"},
     "open-book": {"prep", "open_book", "extract"},
-    "write": {"guides", "write"},
+    "write": {"write"},                              # write 自带 JIT guide 生成，不再依赖 guides phase
     "unified": {"write", "unified_review_fix"},
     "dissect": {"prep", "dissect"},
     "rag-index": {"rag_index"},
