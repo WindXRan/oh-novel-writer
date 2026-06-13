@@ -50,8 +50,11 @@ register(PhaseMeta("guide_fix", "guide 衔接修复",
 register(PhaseMeta("write", "写章",
                    depends_on=["guides"], produces=["ch_N.txt"],
                    scope="chapter", parallel=True, batchable=True))
-register(PhaseMeta("validate", "验证章节",
+register(PhaseMeta("validate", "验证章节（指标）",
                    depends_on=["write"], produces=["validation_report"],
+                   scope="chapter", parallel=True, batchable=True))
+register(PhaseMeta("quality_check", "质量门禁：多Agent质检",
+                   depends_on=["write"], produces=["quality_report"],
                    scope="chapter", parallel=True, batchable=True))
 register(PhaseMeta("compare", "对比源文（固定 1-3 + 1-10）",
                    depends_on=["write"], produces=["compare_report"],

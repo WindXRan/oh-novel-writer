@@ -15,6 +15,7 @@ from phases import (
     phase_guides,
     phase_write, phase_write_agent,
     phase_validate,
+    phase_quality_check,
     phase_postfix, phase_trim, phase_rewrite, phase_polish, phase_expand,
     phase_compare,
     phase_unified_check, phase_unified_fix, phase_unified_review_fix,
@@ -112,6 +113,8 @@ def _build_orch(config, state_mgr, config_path=None) -> Orchestrator:
     def _write_handler(cfg, s, e):
         phase_write(cfg, s, e, cfg.get("workers", 30))
         phase_postfix(cfg, s, e)
+        if not cfg.get("_skip_quality"):
+            phase_quality_check(cfg, s, e, workers=min(cfg.get("workers", 30), 10))
 
     def _write_handler_agent(cfg, s, e):
         ok, fail = phase_write_agent(cfg, s, e, workers=cfg.get("workers", 10), state_mgr=state_mgr)
@@ -138,6 +141,7 @@ def _build_orch(config, state_mgr, config_path=None) -> Orchestrator:
     else:
         orch.register_handler("write", _write_handler)
     orch.register_handler("validate", phase_validate)
+    orch.register_handler("quality_check", phase_quality_check)
     orch.register_handler("compare", phase_compare)
     orch.register_handler("trim", phase_trim)
     orch.register_handler("rewrite", phase_rewrite)
@@ -158,6 +162,7 @@ def main():
     parser.add_argument("--workers", type=int, default=200)
     parser.add_argument("--phase", default="all")
     parser.add_argument("--detect-genre", action="store_true")
+    parser.add_argument("--skip-quality", action="store_true")
     parser.add_argument("--include-fanwai", action="store_true")
     parser.add_argument("--status", action="store_true")
     parser.add_argument("--health-check", action="store_true")
@@ -210,6 +215,10 @@ def main():
             args.end = max(chs)
 
     _run_detect_genre(config, config_path, args)
+
+    if args.skip_quality:
+        config["_skip_quality"] = True
+        print("  [MODE] 跳过质量门禁")
 
     # 显示执行模式
     exec_mode = _get_execution_mode(config)
