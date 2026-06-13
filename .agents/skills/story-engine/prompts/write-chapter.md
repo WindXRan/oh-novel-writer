@@ -1,6 +1,6 @@
 ---
-version: 6
-changelog: 重构硬约束：人设+换皮同等级，去首要原则叠层
+version: 7
+changelog: 加品类对位硬约束 + source_analysis.md引用，防换皮丢品类
 type: user
 phase: write
 description: 写章
@@ -17,12 +17,14 @@ defaults: {"model": "deepseek-v4-flash", "max_tokens": 4096, "reasoning_effort":
 【style_guide】projects/{作者名}/{源书名}/rewrites/{新书名}/guides/style_{N}.md
 【settings】projects/{作者名}/{源书名}/rewrites/{新书名}/settings/
 （settings/ 目录下有角色设定、世界观、基础信息，必须参考以保人设一致）
+【品类参考】projects/{作者名}/{源书名}/rewrites/{新书名}/settings/source_analysis.md
+（source_analysis.md 中有品类特征、风格描述、读者爽点，写章前先读，明白这书到底是什么味儿的）
 
 ---
 
 ## 硬约束（不可违反）
 
-**人设必须准，换皮必须净。** 两者同等重要，缺一则不合格。
+**人设必须准，换皮必须净，品类必须对。** 三者并列，缺一则不合格。
 
 ### 人设准确
 角色的职业/身份/背景必须与 settings 文件一致。不要自行发明：
@@ -40,6 +42,14 @@ defaults: {"model": "deepseek-v4-flash", "max_tokens": 4096, "reasoning_effort":
 - 道具不同（手机→当面质问，不是手机→平板）
 - 关键对话不同（不是人称改写）
 - 读者读前 5 段，不觉得自己在读仿写
+
+### 品类对位
+品类/风格必须对标源文。源文是什么味儿，新书就什么味儿。换皮不换味：
+- 源文甜宠→新书也甜宠，不能写成刑侦/悬疑/苦情
+- 源文擦边→新书同等浓度
+- 源文爽→新书更爽
+- 品类特征来自 source_analysis.md 的"成功因子"和"题材定位"
+- 不确定品类的去读 source_analysis.md
 
 ---
 
