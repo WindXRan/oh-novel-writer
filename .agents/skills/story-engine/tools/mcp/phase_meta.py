@@ -77,18 +77,9 @@ register(PhaseMeta("unified_review_fix", "统一审+修一轮",
 
 
 def resolve_order(goal_phases: set[str]) -> list[list[str]]:
-    """拓扑排序，返回执行波次。依赖链自动补齐。"""
+    """拓扑排序，返回执行波次。不自动补全依赖链（调用方负责展开）。"""
     included = set(goal_phases)
     added = set(included)
-    queue = list(included)
-    while queue:
-        name = queue.pop(0)
-        m = PHASES.get(name)
-        if m:
-            for dep in m.depends_on:
-                if dep not in added:
-                    added.add(dep)
-                    queue.append(dep)
 
     in_degree = {n: 0 for n in added}
     for n in added:

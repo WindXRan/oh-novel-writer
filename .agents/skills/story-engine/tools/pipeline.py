@@ -201,13 +201,17 @@ def main():
             auto_rollback_if_degraded(rewrites_dir)
         return
 
+    goal = _expand(args.phase)
     if not any("--end" in a for a in sys.argv):
         chs = get_chapters_list(config, include_fanwai=args.include_fanwai)
-        if chs: args.end = max(chs)
+        if chs:
+            # compare 单独跑时默认只对比前 10 章，避免全量
+            if goal == {"compare"}:
+                args.end = min(max(chs), 10)
+            else:
+                args.end = max(chs)
 
     _run_detect_genre(config, config_path, args)
-
-    goal = _expand(args.phase)
 
     # 显示执行模式
     exec_mode = _get_execution_mode(config)
