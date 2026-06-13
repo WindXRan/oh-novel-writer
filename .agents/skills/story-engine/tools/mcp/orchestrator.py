@@ -134,7 +134,11 @@ class Orchestrator:
         if self.state_mgr is None:
             return False
         if chapter:
-            return self.state_mgr.get_chapter_status(chapter) == "done"
+            # Only check per-phase chapter status, not global chapter status.
+            # Global chapter status is shared across phases (guides/write/validate…)
+            # so checking it here would cause cross-phase false skips.
+            # The actual skip logic lives in handler-level batch_run(skip_existing=True).
+            return False
         return self.state_mgr.is_phase_done(phase)
 
     def _mark_done(self, phase: str, chapter: int = 0):

@@ -10,7 +10,7 @@ defaults: {"model": "deepseek-v4-flash", "max_tokens": 4096, "reasoning_effort":
 
 精简以下章节，目标 {目标字数} 字。
 
-【原文】projects/{作者名}/{源书名}/rewrites/{新书名}/chapters/ch_{N03d}.txt
+【原文】{rewrites_dir}/chapters/ch_{N03d}.txt
 
 ---
 
@@ -22,6 +22,6 @@ defaults: {"model": "deepseek-v4-flash", "max_tokens": 4096, "reasoning_effort":
 4. **砍废话**：角色内心独白如果已经用动作表达过了，删掉独白
 5. 输出精简后的全文，不要分析过程
 
-输出到：projects/{作者名}/{源书名}/rewrites/{新书名}/chapters/ch_{N}.txt
+输出到：{rewrites_dir}/chapters/ch_{N}.txt
 
-【输出】projects/{作者名}/{源书名}/rewrites/{新书名}/chapters/ch_{N}.txt
+【输出】{rewrites_dir}/chapters/ch_{N}.txt

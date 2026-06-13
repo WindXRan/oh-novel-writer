@@ -3,6 +3,7 @@ name: story-engine
 description: |
     仿写引擎 guide模式：开书→生成guide→写章→对比。
     每章2个guide（plot+style），写章agent只管拿着guide写。
+    支持同一源书开多个仿写项目（自动分配唯一项目名）。
     触发条件：用户说「仿写」「用vPlan写」「帮我仿写这本书」「写第N章」「继续写」。
     不要在用户只是问「怎么写小说」「帮我写大纲」时触发。
 allowed-tools: Bash(python *) Bash(cat *) Bash(ls *) Bash(cp *) Bash(mkdir *)
@@ -125,6 +126,33 @@ Phase 4.5: 审稿 (分批→汇总)          → 审稿报告 + 汇总报告    
 Phase 5:   修复 (根据审稿)            → 修复后章节                     [review.py]
 Phase 6:   统一审查+修复              → unified_review_fix.json       [unified.py]
 Phase 7:   自动导出                    → export/{书名}.txt             [merge_chapters.py]
+```
+
+## 多项目支持（同一源书开多个仿写）
+
+同一本源书可以开 N 个不同的仿写项目。**agent 在用户要求仿写时，必须自动检测已有项目并去重。**
+
+### agent 自动执行流程
+
+```bash
+# 第 1 步：检测已有项目
+ls "projects/{作者}/{源文书名}/rewrites/"
+```
+- 如果该目录不存在 → 首次仿写，直接用 `{新书名}` 作为项目名
+- 如果存在同名目录 → 自动追加 `-v2`、`-v3`… 直到无冲突
+- 例：已有 `霸道总裁爱上我/` → 新项目叫 `霸道总裁爱上我-v2/`
+
+```bash
+# 第 2 步：用 init_rewrite 生成 config（自动去重）
+python .agents/skills/story-engine/tools/init_rewrite.py \
+  --author 作者名 --source 源文目录名 --book 新书名
+```
+- init_rewrite 自动检测冲突并追加 `-vN`
+- 输出：`[OK] config: configs/config_{新书名}-v2.json`
+
+```bash
+# 第 3 步：用该 config 执行 pipeline
+python pipeline.py --config configs/config_{新书名}-v2.json --phase all
 ```
 
 ## 鲁棒性特性

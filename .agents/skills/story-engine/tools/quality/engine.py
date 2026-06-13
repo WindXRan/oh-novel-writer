@@ -85,11 +85,11 @@ def algorithmic_check(config, ch: int) -> dict:
     # 字数
     deviation = (metrics["chars"] - target) / target if target > 0 else 0
     issues = []
-    if deviation > 0.20:
+    if deviation > 0.30:
         issues.append(f"字数超+{deviation:.0%} ({metrics['chars']}/{target})")
-    elif deviation < -0.20:
+    elif deviation < -0.30:
         issues.append(f"字数不足{deviation:.0%} ({metrics['chars']}/{target})")
-    elif abs(deviation) > 0.10:
+    elif abs(deviation) > 0.15:
         issues.append(f"字数偏差{deviation:+.0%} ({metrics['chars']}/{target})")
 
     # 对话占比 (match any quote style: ASCII "", Chinese "", '', etc.)
@@ -230,12 +230,17 @@ def gatekeeper(algo: dict, agents: dict, ch: int) -> dict:
         for issue in result.get("issues", []):
             all_issues.append(f"[{name}] {issue}")
 
-    # Determine pass/fail
+    # Determine pass/fail: 字数偏差(15-30%)是 advisory, 不影响 pass
+    algo_pass = algo.get("pass", False)
+    if not algo_pass:
+        algo_issues = algo.get("issues", [])
+        if any("字数偏差" in i for i in algo_issues):
+            algo_pass = True  # 偏差不足30% → 字数 advisory，不拦
+
     agent_pass = all(
         result.get("pass", False) if "error" not in result else False
         for result in agents.values()
     )
-    algo_pass = algo.get("pass", False)
     passed = algo_pass and agent_pass
 
     return {

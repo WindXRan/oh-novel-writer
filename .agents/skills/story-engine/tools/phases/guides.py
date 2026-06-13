@@ -87,6 +87,7 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
     total_ch = get_total_chapters(config)
     replacements = {
         "新书名": config["book_name"],
+        "rewrites_dir": config.get("rewrites_dir", ""),
         "N": n,
         "N_plus1": n_plus1,
         "N03d": f"{chapter_num:03d}" if chapter_num else "001",
@@ -117,10 +118,10 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
             source_text = get_source_text(config, chapter_num)
             replacements["源文全文"] = source_text or "（源文读取失败）"
 
-    # 写章时按目标字数动态设 max_tokens（够写完整不截断，超字数靠 trim 裁）
-    # 写章时字数控制靠 prompt 内"每段约 X 字"指令，不靠 max_tokens 硬顶
+    # 写章时按目标字数动态设 max_tokens（硬顶，防模型放飞）
     if prompt_type == "write-chapter" and chapter_num:
-        max_tokens = 4096
+        target = int(replacements.get("目标字数", "2000"))
+        max_tokens = max(int(target * 2.0), 2048)
     else:
         max_tokens = pc.get("max_tokens", 8192)
 
@@ -139,6 +140,12 @@ def run_one(config, prompt_type, chapter_num=None, model=None, reasoning_effort=
                 replacements["分析_开局"] = f"\n【源文开局分析（适用于前15章写章）】\n{opening_section}\n"
     if "分析_开局" not in replacements:
         replacements["分析_开局"] = ""
+
+    # 质量门禁反馈（重写时注入上一版问题）
+    if extra_replacements and "质量反馈" in extra_replacements:
+        replacements["质量反馈"] = extra_replacements["质量反馈"]
+    else:
+        replacements["质量反馈"] = ""
 
     # RAG 跨书参考检索（写章时注入同类经验）
     if prompt_type == "write-chapter":

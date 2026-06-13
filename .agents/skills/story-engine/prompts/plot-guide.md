@@ -1,6 +1,6 @@
 ---
-version: 5
-changelog: 前15章注入开局分析
+version: 6
+changelog: 节拍必须符合新书设定: 先读设定后读源文, 以设定为准设计节拍
 type: user
 phase: guides
 description: 章纲生成
@@ -12,9 +12,9 @@ defaults: {"model": "deepseek-v4-flash", "max_tokens": 8192, "reasoning_effort":
 为《{新书名}》第{N}章生成写章指南（章纲）。
 
 {源文全文}
-【设定】projects/{作者名}/{源书名}/rewrites/{新书名}/settings/characters.md
-【剧情】projects/{作者名}/{源书名}/rewrites/{新书名}/settings/plot.md
-【世界观】projects/{作者名}/{源书名}/rewrites/{新书名}/settings/world.md
+【设定】{rewrites_dir}/settings/characters.md
+【剧情】{rewrites_dir}/settings/plot.md
+【世界观】{rewrites_dir}/settings/world.md
 【样板库】.agents/skills/story-engine/knowledge/INDEX.md
 {分析_开局}
 
@@ -23,6 +23,8 @@ defaults: {"model": "deepseek-v4-flash", "max_tokens": 8192, "reasoning_effort":
 ## ⚠️ 核心原则：换皮优先
 
 **你的节拍表必须确保 writer 创作的章节剥掉人名地名后，认不出是源文。** 这不是附加要求，是首要目标。
+
+**第零步：节拍必须符合新书设定。** 在读源文之前，先读【设定】和【剧情】文件，确认新书的角色职业/身份/关系和主线走向。如果源文的情节与新书人设/世界观冲突，**以新书设定为准**，重新设计节拍，不能套用源文剧情结构。
 
 | 要素 | 规则 | 做法 |
 |------|------|------|
@@ -92,13 +94,15 @@ defaults: {"model": "deepseek-v4-flash", "max_tokens": 8192, "reasoning_effort":
 
 ## 任务流程
 
-1. 读 settings/characters.md，记住固定角色名
-2. 读 settings/plot.md，了解主线和冲突
-3. 读 settings/world.md，了解世界观
+0. **先读【设定】和【剧情】** — 确认新书人设/主线/世界观。**这一章在主线中的位置？角色当前的心理阶段？**
+1. 再读【设定】文件，记住固定角色名
+2. 再读 settings/plot.md，了解主线和冲突
+3. 再读 settings/world.md，了解世界观
 4. **抽象拆源文**：不要写"源文做了A事件→新书做B事件"。要写"源文这个节拍的功能是情绪爆发→新书在这个位置也需要情绪爆发"
 5. **对标升级**：对每个情绪节拍，想"怎么让这个情绪比源文更强烈"
-6. 按节拍字数占比×{目标字数}分配新书字数
-7. 节拍表只填**抽象的情绪功能定位**，不填任何具体情节。具体场景留给 writer 创作
+6. **验证：节拍是否与新书设定一致？** — 如果去不掉源文情节的影子（"一夜温存""咖啡厅闺蜜"之类），说明被源文绑架了，必须重做
+7. 按节拍字数占比×{目标字数}分配新书字数
+8. 节拍表只填**抽象的情绪功能定位**，不填任何具体情节。具体场景留给 writer 创作
 
 ### 事件设计流程（只限抽象）
 
